@@ -1,0 +1,2023 @@
+{
+ "'C' Corridor - Wooden Mount": {
+  "item": "Wooden Mount",
+  "item_id": 108,
+  "known": [
+   736,
+   6
+  ],
+  "room": "'C' Corridor",
+  "room_nb": 516
+ },
+ "'Death' Passage - Armor Key": {
+  "item": "Armor Key",
+  "item_id": 46,
+  "known": [
+   774,
+   5
+  ],
+  "room": "'Death' Passage",
+  "room_nb": 535
+ },
+ "'L' Corridor - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   756,
+   1
+  ],
+  "room": "'L' Corridor",
+  "room_nb": 264
+ },
+ "'L' Corridor - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   756,
+   0
+  ],
+  "room": "'L' Corridor",
+  "room_nb": 264
+ },
+ "'O' Room - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   746,
+   6
+  ],
+  "room": "'O' Room",
+  "room_nb": 1285
+ },
+ "Aqua Ring Entry - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   780,
+   5
+  ],
+  "room": "Aqua Ring Entry",
+  "room_nb": 1037
+ },
+ "Aqua Ring Entry - Magnum Rounds": {
+  "item": "Magnum Rounds",
+  "item_id": 25,
+  "known": [
+   780,
+   6
+  ],
+  "room": "Aqua Ring Entry",
+  "room_nb": 1037
+ },
+ "Aqua Ring Storage - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   776,
+   6
+  ],
+  "room": "Aqua Ring Storage",
+  "room_nb": 1040
+ },
+ "Aqua Ring Water Tank - Gallery Key": {
+  "item": "Gallery Key",
+  "item_id": 30,
+  "known": [
+   780,
+   0
+  ],
+  "room": "Aqua Ring Water Tank",
+  "room_nb": 1042
+ },
+ "Armor Room - Mask without eyes, nose, or mouth": {
+  "item": "Mask without eyes, nose, or mouth",
+  "item_id": 103,
+  "known": [
+   772,
+   2
+  ],
+  "room": "Armor Room",
+  "room_nb": 517
+ },
+ "Art Room - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   742,
+   2
+  ],
+  "room": "Art Room",
+  "room_nb": 263
+ },
+ "Art Room - Map of the Mansion 1F": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   0
+  ],
+  "room": "Art Room",
+  "room_nb": 263
+ },
+ "Attic - Mask without a nose": {
+  "item": "Mask without a nose",
+  "item_id": 127,
+  "known": [
+   734,
+   1
+  ],
+  "room": "Attic",
+  "room_nb": 528
+ },
+ "Bar - Gold Emblem": {
+  "item": "Gold Emblem",
+  "item_id": 70,
+  "known": [
+   748,
+   7
+  ],
+  "room": "Bar",
+  "room_nb": 271
+ },
+ "Bar - Missing Music": {
+  "item": "Missing Music",
+  "item_id": 32,
+  "known": [
+   748,
+   5
+  ],
+  "room": "Bar",
+  "room_nb": 271
+ },
+ "Bathroom - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   745,
+   4
+  ],
+  "room": "Bathroom",
+  "room_nb": 265
+ },
+ "Bedroom - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   755,
+   2
+  ],
+  "room": "Bedroom",
+  "room_nb": 521
+ },
+ "Bedroom - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   755,
+   4
+  ],
+  "room": "Bedroom",
+  "room_nb": 521
+ },
+ "Bedroom - Ink Ribbons": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   755,
+   3
+  ],
+  "room": "Bedroom",
+  "room_nb": 521
+ },
+ "Boulder Passage 1 - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   753,
+   0
+  ],
+  "room": "Boulder Passage 1",
+  "room_nb": 779
+ },
+ "Boulder Passage 2 - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   753,
+   1
+  ],
+  "room": "Boulder Passage 2",
+  "room_nb": 783
+ },
+ "Cabin - Map of the Courtyard": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   4
+  ],
+  "room": "Cabin",
+  "room_nb": 788
+ },
+ "Cabin - Square Crank": {
+  "item": "Square Crank",
+  "item_id": 60,
+  "known": [
+   744,
+   0
+  ],
+  "room": "Cabin",
+  "room_nb": 788
+ },
+ "Cave Entrance Passage - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   746,
+   4
+  ],
+  "room": "Cave Entrance Passage",
+  "room_nb": 775
+ },
+ "Cave Entrance Passage - Ink Ribbon": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   747,
+   5
+  ],
+  "room": "Cave Entrance Passage",
+  "room_nb": 775
+ },
+ "Concrete Passage 1 - Map of the Mansion B1": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   3
+  ],
+  "room": "Concrete Passage 1",
+  "room_nb": 538
+ },
+ "Concrete Passage 1 - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   759,
+   4
+  ],
+  "room": "Concrete Passage 1",
+  "room_nb": 538
+ },
+ "Concrete Passage 2 - Blue Herb": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   744,
+   6
+  ],
+  "room": "Concrete Passage 2",
+  "room_nb": 539
+ },
+ "Concrete Passage 2 - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   742,
+   7
+  ],
+  "room": "Concrete Passage 2",
+  "room_nb": 539
+ },
+ "Concrete Passage 2 - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   742,
+   6
+  ],
+  "room": "Concrete Passage 2",
+  "room_nb": 539
+ },
+ "Concrete Passage 2 - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   744,
+   5
+  ],
+  "room": "Concrete Passage 2",
+  "room_nb": 539
+ },
+ "Control Room - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   763,
+   1
+  ],
+  "room": "Control Room",
+  "room_nb": 1041
+ },
+ "Control Room - Map of the Aqua Ring": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   791,
+   0
+  ],
+  "room": "Control Room",
+  "room_nb": 1041
+ },
+ "Courtyard Study - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   755,
+   1
+  ],
+  "room": "Courtyard Study",
+  "room_nb": 281
+ },
+ "Courtyard Study - Metal Object": {
+  "item": "Metal Object",
+  "item_id": 65,
+  "known": [
+   749,
+   1
+  ],
+  "room": "Courtyard Study",
+  "room_nb": 281
+ },
+ "Courtyard Study - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   755,
+   0
+  ],
+  "room": "Courtyard Study",
+  "room_nb": 281
+ },
+ "Crypt - Book of Curses": {
+  "item": "Book of Curses",
+  "item_id": 22,
+  "known": [
+   745,
+   2
+  ],
+  "room": "Crypt",
+  "room_nb": 267
+ },
+ "Crypt - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   789,
+   7
+  ],
+  "room": "Crypt",
+  "room_nb": 267
+ },
+ "Crypt - Stone & Metal Object": {
+  "item": "Stone & Metal Object",
+  "item_id": 53,
+  "known": [
+   745,
+   3
+  ],
+  "room": "Crypt",
+  "room_nb": 267
+ },
+ "Deer Room - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   777,
+   1
+  ],
+  "room": "Deer Room",
+  "room_nb": 520
+ },
+ "Dining Room - Blue Gemstone": {
+  "item": "Blue Gemstone",
+  "item_id": 73,
+  "known": [
+   748,
+   2
+  ],
+  "room": "Dining Room",
+  "room_nb": 261
+ },
+ "Dining Room - Ink Ribbons": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   754,
+   1
+  ],
+  "room": "Dining Room",
+  "room_nb": 261
+ },
+ "Dining Room - Shield Key": {
+  "item": "Shield Key",
+  "item_id": 47,
+  "known": [
+   748,
+   3
+  ],
+  "room": "Dining Room",
+  "room_nb": 261
+ },
+ "Dining Room - Wooden Emblem": {
+  "item": "Wooden Emblem",
+  "item_id": 69,
+  "known": [
+   748,
+   4
+  ],
+  "room": "Dining Room",
+  "room_nb": 261
+ },
+ "Dining Room 2F - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   752,
+   7
+  ],
+  "room": "Dining Room 2F",
+  "room_nb": 514
+ },
+ "East Wing Storeroom - First Aid Spray (Barry)": {
+  "item": "First Aid Spray",
+  "item_id": 33,
+  "known": [
+   743,
+   2
+  ],
+  "room": "East Wing Storeroom",
+  "room_nb": 280
+ },
+ "East Wing Storeroom - Fuel Canteen": {
+  "item": "Fuel Canteen",
+  "item_id": 27,
+  "known": [
+   740,
+   4
+  ],
+  "room": "East Wing Storeroom",
+  "room_nb": 280
+ },
+ "East Wing Storeroom - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": null,
+  "room": "East Wing Storeroom",
+  "room_nb": 280
+ },
+ "East Wing Storeroom - Incendiary Shells (Barry)": {
+  "item": "Incendiary Shells",
+  "item_id": 20,
+  "known": [
+   743,
+   1
+  ],
+  "room": "East Wing Storeroom",
+  "room_nb": 280
+ },
+ "Elevator Corridor - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   736,
+   3
+  ],
+  "room": "Elevator Corridor",
+  "room_nb": 531
+ },
+ "Elevator Corridor - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   736,
+   5
+  ],
+  "room": "Elevator Corridor",
+  "room_nb": 531
+ },
+ "Elevator Corridor - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   736,
+   4
+  ],
+  "room": "Elevator Corridor",
+  "room_nb": 531
+ },
+ "Enrico Room - Hexagonal Crank": {
+  "item": "Hexagonal Crank",
+  "item_id": 61,
+  "known": [
+   760,
+   0
+  ],
+  "room": "Enrico Room",
+  "room_nb": 778
+ },
+ "Fish Tank Room - Bee Specimen": {
+  "item": "Bee Specimen",
+  "item_id": 115,
+  "known": [
+   749,
+   3
+  ],
+  "room": "Fish Tank Room",
+  "room_nb": 522
+ },
+ "Fish Tank Room - Fishhook": {
+  "item": "Fishhook",
+  "item_id": 117,
+  "known": [
+   749,
+   5
+  ],
+  "room": "Fish Tank Room",
+  "room_nb": 522
+ },
+ "Fish Tank Room - Lure without a hook": {
+  "item": "Lure without a hook",
+  "item_id": 116,
+  "known": [
+   749,
+   4
+  ],
+  "room": "Fish Tank Room",
+  "room_nb": 522
+ },
+ "Fish Tank Room - Wind Crest": {
+  "item": "Wind Crest",
+  "item_id": 57,
+  "known": [
+   749,
+   2
+  ],
+  "room": "Fish Tank Room",
+  "room_nb": 522
+ },
+ "Gallery - 003 Key": {
+  "item": "003 Key",
+  "item_id": 50,
+  "known": [
+   776,
+   3
+  ],
+  "room": "Gallery",
+  "room_nb": 1032
+ },
+ "Gallery - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   779,
+   5
+  ],
+  "room": "Gallery",
+  "room_nb": 1032
+ },
+ "Gallery - Insecticide Spray": {
+  "item": "Insecticide Spray",
+  "item_id": 100,
+  "known": [
+   776,
+   2
+  ],
+  "room": "Gallery",
+  "room_nb": 1032
+ },
+ "Gallery - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   779,
+   3
+  ],
+  "room": "Gallery",
+  "room_nb": 1032
+ },
+ "Garbage Compactor Room - Broken Flamethrower": {
+  "item": "Broken Flamethrower",
+  "item_id": 107,
+  "known": [
+   774,
+   2
+  ],
+  "room": "Garbage Compactor Room",
+  "room_nb": 790
+ },
+ "Garden Shed - Battery Pack 1": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   744,
+   7
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Garden Shed - Battery Pack 2": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   746,
+   7
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Garden Shed - First Aid Spray 1": {
+  "item": "First Aid Spray",
+  "item_id": 33,
+  "known": [
+   742,
+   0
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Garden Shed - First Aid Spray 2": {
+  "item": "First Aid Spray",
+  "item_id": 33,
+  "known": [
+   747,
+   1
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Garden Shed - Grenade Shells": {
+  "item": "Grenade Shells",
+  "item_id": 16,
+  "known": [
+   747,
+   0
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Garden Shed - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   741,
+   7
+  ],
+  "room": "Garden Shed",
+  "room_nb": 283
+ },
+ "Generator Room - Handgun Magazine 1": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   773,
+   4
+  ],
+  "room": "Generator Room",
+  "room_nb": 777
+ },
+ "Generator Room - Handgun Magazine 2": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   778,
+   5
+  ],
+  "room": "Generator Room",
+  "room_nb": 777
+ },
+ "Generator Room - Shaft": {
+  "item": "Shaft",
+  "item_id": 122,
+  "known": [
+   774,
+   7
+  ],
+  "room": "Generator Room",
+  "room_nb": 777
+ },
+ "Graveyard - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   789,
+   6
+  ],
+  "room": "Graveyard",
+  "room_nb": 267
+ },
+ "Greenhouse - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   756,
+   2
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Greenhouse - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   756,
+   3
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Greenhouse - Green Herb 3": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   756,
+   4
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Greenhouse - Green Herb 4": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   756,
+   5
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Greenhouse - Green Herb 5": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   756,
+   6
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Greenhouse - Mask without eyes": {
+  "item": "Mask without eyes",
+  "item_id": 126,
+  "known": [
+   756,
+   7
+  ],
+  "room": "Greenhouse",
+  "room_nb": 268
+ },
+ "Heliport - Signal Rockets": {
+  "item": "Signal Rockets",
+  "item_id": 106,
+  "known": [
+   772,
+   5
+  ],
+  "room": "Heliport",
+  "room_nb": 771
+ },
+ "Jessica's Tomb - Barry's Magnum": {
+  "item": "Barry's Magnum",
+  "item_id": 15,
+  "known": [
+   747,
+   3
+  ],
+  "room": "Jessica's Tomb",
+  "room_nb": 789
+ },
+ "Kitchen - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   742,
+   3
+  ],
+  "room": "Kitchen",
+  "room_nb": 540
+ },
+ "Lab Item Box Room - Ink Ribbon": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   764,
+   2
+  ],
+  "room": "Lab Item Box Room",
+  "room_nb": 1282
+ },
+ "Lab Stairway - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   781,
+   3
+  ],
+  "room": "Lab Stairway",
+  "room_nb": 1283
+ },
+ "Lab Stairway - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   781,
+   4
+  ],
+  "room": "Lab Stairway",
+  "room_nb": 1283
+ },
+ "Lab Stairway - MO Disk 2": {
+  "item": "MO Disk 2",
+  "item_id": 94,
+  "known": [
+   780,
+   1
+  ],
+  "room": "Lab Stairway",
+  "room_nb": 1283
+ },
+ "Large Art & Mirror Rooms - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   757,
+   0
+  ],
+  "room": "Large Art & Mirror Rooms",
+  "room_nb": 273
+ },
+ "Large Art & Mirror Rooms - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   757,
+   2
+  ],
+  "room": "Large Art & Mirror Rooms",
+  "room_nb": 273
+ },
+ "Large Art & Mirror Rooms - Ink Ribbon": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   757,
+   1
+  ],
+  "room": "Large Art & Mirror Rooms",
+  "room_nb": 273
+ },
+ "Large Art & Mirror Rooms - Jewelry Box (Broach)": {
+  "item": "Jewelry Box (Broach)",
+  "item_id": 102,
+  "known": [
+   757,
+   6
+  ],
+  "room": "Large Art & Mirror Rooms",
+  "room_nb": 273
+ },
+ "Large Gallery - Mask without a mouth": {
+  "item": "Mask without a mouth",
+  "item_id": 128,
+  "known": [
+   772,
+   3
+  ],
+  "room": "Large Gallery",
+  "room_nb": 279
+ },
+ "Library - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   772,
+   4
+  ],
+  "room": "Library",
+  "room_nb": 534
+ },
+ "Library - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   773,
+   1
+  ],
+  "room": "Library",
+  "room_nb": 534
+ },
+ "Library - Last Book, vol. 2": {
+  "item": "Last Book, vol. 2",
+  "item_id": 92,
+  "known": [
+   777,
+   4
+  ],
+  "room": "Library",
+  "room_nb": 534
+ },
+ "Lisa's Room - Blue Herb": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   782,
+   3
+  ],
+  "room": "Lisa's Room",
+  "room_nb": 793
+ },
+ "Lisa's Room - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   782,
+   2
+  ],
+  "room": "Lisa's Room",
+  "room_nb": 793
+ },
+ "Lisa's Room - Jewelry Box (Stone Ring)": {
+  "item": "Jewelry Box (Stone Ring)",
+  "item_id": 99,
+  "known": [
+   780,
+   4
+  ],
+  "room": "Lisa's Room",
+  "room_nb": 793
+ },
+ "Living Room - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   758,
+   1
+  ],
+  "room": "Living Room",
+  "room_nb": 278
+ },
+ "Living Room - Ink Ribbons": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   758,
+   3
+  ],
+  "room": "Living Room",
+  "room_nb": 278
+ },
+ "Living Room - Shotgun": {
+  "item": "Shotgun",
+  "item_id": 6,
+  "known": [
+   757,
+   7
+  ],
+  "room": "Living Room",
+  "room_nb": 278
+ },
+ "Lounge Room - First Aid Spray": {
+  "item": "First Aid Spray",
+  "item_id": 33,
+  "known": [
+   762,
+   0
+  ],
+  "room": "Lounge Room",
+  "room_nb": 1294
+ },
+ "Lounge Room - Grenade Shells": {
+  "item": "Grenade Shells",
+  "item_id": 16,
+  "known": [
+   761,
+   5
+  ],
+  "room": "Lounge Room",
+  "room_nb": 1294
+ },
+ "Lounge Room - Ink Ribbon": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   761,
+   7
+  ],
+  "room": "Lounge Room",
+  "room_nb": 1294
+ },
+ "Main Garden - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   775,
+   2
+  ],
+  "room": "Main Garden",
+  "room_nb": 768
+ },
+ "Main Hall - Acid Shells (Barry)": {
+  "item": "Acid Shells",
+  "item_id": 19,
+  "known": null,
+  "room": "Main Hall",
+  "room_nb": 262
+ },
+ "Main Hall - Lock Pick (Barry)": {
+  "item": "Lock Pick",
+  "item_id": 43,
+  "known": [
+   732,
+   1
+  ],
+  "room": "Main Hall",
+  "room_nb": 262
+ },
+ "Main Laboratory - Master Key": {
+  "item": "Master Key",
+  "item_id": 55,
+  "known": [
+   782,
+   5
+  ],
+  "room": "Main Laboratory",
+  "room_nb": 1299
+ },
+ "Main Laboratory Entrance - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   783,
+   3
+  ],
+  "room": "Main Laboratory Entrance",
+  "room_nb": 1300
+ },
+ "Mansion Drug Room - Serum": {
+  "item": "Serum",
+  "item_id": 78,
+  "known": [
+   748,
+   0
+  ],
+  "room": "Mansion Drug Room",
+  "room_nb": 256
+ },
+ "Materials Room - Acid Shells": {
+  "item": "Acid Shells",
+  "item_id": 19,
+  "known": [
+   735,
+   1
+  ],
+  "room": "Materials Room",
+  "room_nb": 537
+ },
+ "Materials Room - Battery": {
+  "item": "Battery",
+  "item_id": 67,
+  "known": [
+   735,
+   6
+  ],
+  "room": "Materials Room",
+  "room_nb": 537
+ },
+ "Materials Room - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   735,
+   2
+  ],
+  "room": "Materials Room",
+  "room_nb": 537
+ },
+ "Materials Room - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   735,
+   0
+  ],
+  "room": "Materials Room",
+  "room_nb": 537
+ },
+ "Mirror Corridor - Golden Arrow": {
+  "item": "Golden Arrow",
+  "item_id": 21,
+  "known": [
+   745,
+   1
+  ],
+  "room": "Mirror Corridor",
+  "room_nb": 532
+ },
+ "Mirror Corridor - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   742,
+   4
+  ],
+  "room": "Mirror Corridor",
+  "room_nb": 532
+ },
+ "Mirror Corridor - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   744,
+   3
+  ],
+  "room": "Mirror Corridor",
+  "room_nb": 532
+ },
+ "Morgue - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   761,
+   4
+  ],
+  "room": "Morgue",
+  "room_nb": 1287
+ },
+ "Morgue - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   763,
+   3
+  ],
+  "room": "Morgue",
+  "room_nb": 1287
+ },
+ "Northern Corridor - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   736,
+   0
+  ],
+  "room": "Northern Corridor",
+  "room_nb": 259
+ },
+ "Northern Corridor - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": null,
+  "room": "Northern Corridor",
+  "room_nb": 259
+ },
+ "Operating Room - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   753,
+   3
+  ],
+  "room": "Operating Room",
+  "room_nb": 1286
+ },
+ "Operating Room - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   752,
+   2
+  ],
+  "room": "Operating Room",
+  "room_nb": 1286
+ },
+ "Operating Room - Magnum Rounds": {
+  "item": "Magnum Rounds",
+  "item_id": 25,
+  "known": [
+   753,
+   4
+  ],
+  "room": "Operating Room",
+  "room_nb": 1286
+ },
+ "Outside Balcony - Collar (Cerberus)": {
+  "item": "Collar",
+  "item_id": 24,
+  "known": [
+   758,
+   7
+  ],
+  "room": "Outside Balcony",
+  "room_nb": 515
+ },
+ "Outside Boiler - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   754,
+   3
+  ],
+  "room": "Outside Boiler",
+  "room_nb": 276
+ },
+ "Outside Boiler - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   754,
+   4
+  ],
+  "room": "Outside Boiler",
+  "room_nb": 276
+ },
+ "Outside Boiler - Herbicide": {
+  "item": "Herbicide",
+  "item_id": 76,
+  "known": [
+   749,
+   0
+  ],
+  "room": "Outside Boiler",
+  "room_nb": 276
+ },
+ "Outside Boiler - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   754,
+   5
+  ],
+  "room": "Outside Boiler",
+  "room_nb": 276
+ },
+ "Outside Patio - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   773,
+   0
+  ],
+  "room": "Outside Patio",
+  "room_nb": 530
+ },
+ "Outside Patio - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   772,
+   6
+  ],
+  "room": "Outside Patio",
+  "room_nb": 530
+ },
+ "Outside Patio - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   772,
+   7
+  ],
+  "room": "Outside Patio",
+  "room_nb": 530
+ },
+ "Outside Patio - Grenade Launcher": {
+  "item": "Grenade Launcher",
+  "item_id": 7,
+  "known": [
+   773,
+   6
+  ],
+  "room": "Outside Patio",
+  "room_nb": 530
+ },
+ "Pass Code Corridor - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   747,
+   7
+  ],
+  "room": "Pass Code Corridor",
+  "room_nb": 1288
+ },
+ "Passage to Heliport - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   762,
+   3
+  ],
+  "room": "Passage to Heliport",
+  "room_nb": 1281
+ },
+ "Passage to Heliport - Fuse Unit": {
+  "item": "Fuse Unit",
+  "item_id": 97,
+  "known": [
+   762,
+   1
+  ],
+  "room": "Passage to Heliport",
+  "room_nb": 1281
+ },
+ "Passage to Heliport - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   762,
+   2
+  ],
+  "room": "Passage to Heliport",
+  "room_nb": 1281
+ },
+ "Pillar Room - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   759,
+   1
+  ],
+  "room": "Pillar Room",
+  "room_nb": 525
+ },
+ "Pillar Room - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   759,
+   2
+  ],
+  "room": "Pillar Room",
+  "room_nb": 525
+ },
+ "Plant 42 Room - Helmet Key": {
+  "item": "Helmet Key",
+  "item_id": 48,
+  "known": [
+   740,
+   5
+  ],
+  "room": "Plant 42 Room",
+  "room_nb": 1036
+ },
+ "Power Maze A - Fuel Capsule": {
+  "item": "Fuel Capsule",
+  "item_id": 111,
+  "known": [
+   746,
+   2
+  ],
+  "room": "Power Maze A",
+  "room_nb": 1295
+ },
+ "Power Maze B - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   753,
+   7
+  ],
+  "room": "Power Maze B",
+  "room_nb": 1296
+ },
+ "Rec Room - First Aid Box": {
+  "item": "First Aid Box",
+  "item_id": 101,
+  "known": [
+   761,
+   1
+  ],
+  "room": "Rec Room",
+  "room_nb": 1028
+ },
+ "Rec Room - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   760,
+   7
+  ],
+  "room": "Rec Room",
+  "room_nb": 1028
+ },
+ "Rec Room - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   761,
+   0
+  ],
+  "room": "Rec Room",
+  "room_nb": 1028
+ },
+ "Rec Room - Red Book": {
+  "item": "Red Book",
+  "item_id": 90,
+  "known": [
+   761,
+   3
+  ],
+  "room": "Rec Room",
+  "room_nb": 1028
+ },
+ "Rec Room - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   761,
+   2
+  ],
+  "room": "Rec Room",
+  "room_nb": 1028
+ },
+ "Researcher's Bedroom - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   777,
+   7
+  ],
+  "room": "Researcher's Bedroom",
+  "room_nb": 270
+ },
+ "Researcher's Bedroom - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   773,
+   2
+  ],
+  "room": "Researcher's Bedroom",
+  "room_nb": 270
+ },
+ "Residence Central Corridor - Map of the Residence": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   7
+  ],
+  "room": "Residence Central Corridor",
+  "room_nb": 1029
+ },
+ "Residence Entry Corridor - Blue Herb 1": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   760,
+   1
+  ],
+  "room": "Residence Entry Corridor",
+  "room_nb": 1024
+ },
+ "Residence Entry Corridor - Blue Herb 2": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   760,
+   2
+  ],
+  "room": "Residence Entry Corridor",
+  "room_nb": 1024
+ },
+ "Residence Entry Corridor - Blue Herb 3": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   760,
+   3
+  ],
+  "room": "Residence Entry Corridor",
+  "room_nb": 1024
+ },
+ "Residence Storeroom - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   760,
+   4
+  ],
+  "room": "Residence Storeroom",
+  "room_nb": 1027
+ },
+ "Residence Storeroom - Ink Ribbon": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   760,
+   5
+  ],
+  "room": "Residence Storeroom",
+  "room_nb": 1027
+ },
+ "Resting Room - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   773,
+   3
+  ],
+  "room": "Resting Room",
+  "room_nb": 523
+ },
+ "Resting Room - Map of the Mansion 2F": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   2
+  ],
+  "room": "Resting Room",
+  "room_nb": 523
+ },
+ "Room 001 - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   764,
+   0
+  ],
+  "room": "Room 001",
+  "room_nb": 1025
+ },
+ "Room 001 - Self-Defence Gun": {
+  "item": "Self-Defence Gun",
+  "item_id": 4,
+  "known": [
+   774,
+   3
+  ],
+  "room": "Room 001",
+  "room_nb": 1025
+ },
+ "Room 001 Bathroom - Control Room Key": {
+  "item": "Control Room Key",
+  "item_id": 110,
+  "known": [
+   774,
+   4
+  ],
+  "room": "Room 001 Bathroom",
+  "room_nb": 1026
+ },
+ "Room 002 Bathroom - 001 Key": {
+  "item": "001 Key",
+  "item_id": 49,
+  "known": [
+   777,
+   6
+  ],
+  "room": "Room 002 Bathroom",
+  "room_nb": 1031
+ },
+ "Secret Passage - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   736,
+   1
+  ],
+  "room": "Secret Passage",
+  "room_nb": 524
+ },
+ "Secret Passage - Last Book Vol. 1": {
+  "item": "Last Book, vol. 1",
+  "item_id": 91,
+  "known": [
+   736,
+   2
+  ],
+  "room": "Secret Passage",
+  "room_nb": 524
+ },
+ "Small Dining Room - Handgun Magazine (Cabinet)": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   744,
+   2
+  ],
+  "room": "Small Dining Room",
+  "room_nb": 527
+ },
+ "Small Dining Room - Handgun Magazine (Table)": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   742,
+   5
+  ],
+  "room": "Small Dining Room",
+  "room_nb": 527
+ },
+ "Small Dining Room - Music, mid-pages": {
+  "item": "Music, mid-pages",
+  "item_id": 129,
+  "known": [
+   740,
+   1
+  ],
+  "room": "Small Dining Room",
+  "room_nb": 527
+ },
+ "Small Headstone Area - Magnum": {
+  "item": "Magnum",
+  "item_id": 11,
+  "known": [
+   745,
+   5
+  ],
+  "room": "Small Headstone Area",
+  "room_nb": 786
+ },
+ "Small Headstone Area - Moon Crest": {
+  "item": "Moon Crest",
+  "item_id": 59,
+  "known": [
+   745,
+   7
+  ],
+  "room": "Small Headstone Area",
+  "room_nb": 786
+ },
+ "Small Headstone Area - Star Crest": {
+  "item": "Star Crest",
+  "item_id": 56,
+  "known": [
+   745,
+   6
+  ],
+  "room": "Small Headstone Area",
+  "room_nb": 786
+ },
+ "Small Headstone Area - Sun Crest": {
+  "item": "Sun Crest",
+  "item_id": 58,
+  "known": [
+   746,
+   0
+  ],
+  "room": "Small Headstone Area",
+  "room_nb": 786
+ },
+ "Small Library - Dog Whistle": {
+  "item": "Dog Whistle",
+  "item_id": 96,
+  "known": [
+   747,
+   4
+  ],
+  "room": "Small Library",
+  "room_nb": 518
+ },
+ "Small Library - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   743,
+   7
+  ],
+  "room": "Small Library",
+  "room_nb": 518
+ },
+ "Small Library - Lighter": {
+  "item": "Lighter",
+  "item_id": 77,
+  "known": [
+   742,
+   1
+  ],
+  "room": "Small Library",
+  "room_nb": 518
+ },
+ "Small Storeroom - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   740,
+   2
+  ],
+  "room": "Small Storeroom",
+  "room_nb": 258
+ },
+ "Small Storeroom - Broken Shotgun": {
+  "item": "Broken Shotgun",
+  "item_id": 75,
+  "known": [
+   740,
+   0
+  ],
+  "room": "Small Storeroom",
+  "room_nb": 258
+ },
+ "Small Storeroom - Ink Ribbons": {
+  "item": "Ink Ribbon",
+  "item_id": 68,
+  "known": [
+   740,
+   3
+  ],
+  "room": "Small Storeroom",
+  "room_nb": 258
+ },
+ "Spider Room - Knife": {
+  "item": "Knife",
+  "item_id": 66,
+  "known": [
+   780,
+   3
+  ],
+  "room": "Spider Room",
+  "room_nb": 780
+ },
+ "Straight Passage - Blue Herb 1": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   752,
+   3
+  ],
+  "room": "Straight Passage",
+  "room_nb": 781
+ },
+ "Straight Passage - Blue Herb 2": {
+  "item": "Blue Herb",
+  "item_id": 36,
+  "known": [
+   752,
+   4
+  ],
+  "room": "Straight Passage",
+  "room_nb": 781
+ },
+ "Straight Passage - Map of the Caves": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   790,
+   5
+  ],
+  "room": "Straight Passage",
+  "room_nb": 781
+ },
+ "Tiger Statue Room - MO Disk 1": {
+  "item": "MO Disk 1",
+  "item_id": 93,
+  "known": [
+   775,
+   1
+  ],
+  "room": "Tiger Statue Room",
+  "room_nb": 269
+ },
+ "Tiger Statue Room - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   772,
+   1
+  ],
+  "room": "Tiger Statue Room",
+  "room_nb": 269
+ },
+ "Trophy Room - Dagger": {
+  "item": "Dagger",
+  "item_id": 112,
+  "known": [
+   755,
+   6
+  ],
+  "room": "Trophy Room",
+  "room_nb": 533
+ },
+ "Trophy Room - Grenade Shells": {
+  "item": "Grenade Shells",
+  "item_id": 16,
+  "known": [
+   755,
+   7
+  ],
+  "room": "Trophy Room",
+  "room_nb": 533
+ },
+ "Trophy Room - Red Jewel": {
+  "item": "Red Jewel",
+  "item_id": 72,
+  "known": [
+   749,
+   7
+  ],
+  "room": "Trophy Room",
+  "room_nb": 533
+ },
+ "Trophy Room - Yellow Jewel": {
+  "item": "Yellow Jewel",
+  "item_id": 74,
+  "known": [
+   749,
+   6
+  ],
+  "room": "Trophy Room",
+  "room_nb": 533
+ },
+ "Underground Statue Room - Cylinder": {
+  "item": "Cylinder",
+  "item_id": 123,
+  "known": [
+   780,
+   7
+  ],
+  "room": "Underground Statue Room",
+  "room_nb": 774
+ },
+ "Underground Storage Room - Battery Pack": {
+  "item": "Battery Pack",
+  "item_id": 121,
+  "known": [
+   779,
+   2
+  ],
+  "room": "Underground Storage Room",
+  "room_nb": 792
+ },
+ "Underground Storage Room - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   778,
+   7
+  ],
+  "room": "Underground Storage Room",
+  "room_nb": 792
+ },
+ "Underground Storage Room - Magnum Rounds": {
+  "item": "Magnum Rounds",
+  "item_id": 25,
+  "known": [
+   779,
+   0
+  ],
+  "room": "Underground Storage Room",
+  "room_nb": 792
+ },
+ "Visual Data Room - First Aid Spray": {
+  "item": "First Aid Spray",
+  "item_id": 33,
+  "known": [
+   746,
+   5
+  ],
+  "room": "Visual Data Room",
+  "room_nb": 1284
+ },
+ "Visual Data Room - MO Disk 3": {
+  "item": "MO Disk 3",
+  "item_id": 95,
+  "known": [
+   782,
+   6
+  ],
+  "room": "Visual Data Room",
+  "room_nb": 1284
+ },
+ "Visual Data Room - Map of the Laboratory": {
+  "item": "map",
+  "item_id": 130,
+  "known": [
+   791,
+   1
+  ],
+  "room": "Visual Data Room",
+  "room_nb": 1284
+ },
+ "Visual Data Room - Power Key": {
+  "item": "Power Key",
+  "item_id": 54,
+  "known": [
+   782,
+   0
+  ],
+  "room": "Visual Data Room",
+  "room_nb": 1284
+ },
+ "Visual Data Room - Shotgun Shells": {
+  "item": "Shotgun Shells",
+  "item_id": 18,
+  "known": [
+   783,
+   0
+  ],
+  "room": "Visual Data Room",
+  "room_nb": 1284
+ },
+ "West Wing Outer Stairway - Green Herb 1": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   775,
+   6
+  ],
+  "room": "West Wing Outer Stairway",
+  "room_nb": 274
+ },
+ "West Wing Outer Stairway - Green Herb 2": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   775,
+   7
+  ],
+  "room": "West Wing Outer Stairway",
+  "room_nb": 274
+ },
+ "West Wing Outer Stairway - Handgun Magazine": {
+  "item": "Handgun Magazine",
+  "item_id": 17,
+  "known": [
+   775,
+   5
+  ],
+  "room": "West Wing Outer Stairway",
+  "room_nb": 274
+ },
+ "Winding Underground - Green Herb": {
+  "item": "Green Herb",
+  "item_id": 34,
+  "known": [
+   764,
+   3
+  ],
+  "room": "Winding Underground",
+  "room_nb": 791
+ },
+ "Winding Underground - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   764,
+   4
+  ],
+  "room": "Winding Underground",
+  "room_nb": 791
+ },
+ "X-Ray Room A - Incendiary Shells": {
+  "item": "Incendiary Shells",
+  "item_id": 20,
+  "known": [
+   753,
+   6
+  ],
+  "room": "X-Ray Room A",
+  "room_nb": 1290
+ },
+ "X-Ray Room A - Slide Filter": {
+  "item": "Slide Filter",
+  "item_id": 109,
+  "known": [
+   762,
+   7
+  ],
+  "room": "X-Ray Room A",
+  "room_nb": 1290
+ },
+ "X-Ray Room B - X-Ray 1": {
+  "item": "X-Ray 1",
+  "item_id": 119,
+  "known": [
+   782,
+   7
+  ],
+  "room": "X-Ray Room B",
+  "room_nb": 1289
+ },
+ "X-Ray Room B - X-Ray 2": {
+  "item": "X-Ray 2",
+  "item_id": 120,
+  "known": [
+   780,
+   2
+  ],
+  "room": "X-Ray Room B",
+  "room_nb": 1289
+ },
+ "Zigzag Path - Red Herb": {
+  "item": "Red Herb",
+  "item_id": 35,
+  "known": [
+   752,
+   6
+  ],
+  "room": "Zigzag Path",
+  "room_nb": 772
+ }
+}

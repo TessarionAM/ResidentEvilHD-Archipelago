@@ -1,0 +1,43 @@
+// RE1 HD Archipelago - autoload trace for x32dbg (Steam build 6699874012183562949)
+//
+// HOW TO USE (about 5 minutes):
+//   1. Start the game normally and wait for the title screen.
+//   2. Open x32dbg (the 32-bit one), File > Attach > bhd.exe. It pauses the game: press F9 (Run).
+//   3. Script tab > right-click > Load Script > Open... > this file. Right-click > Run (Space).
+//      The game keeps running: these breakpoints only WRITE TO THE LOG, they never pause.
+//   4. In the game: title screen > Load Game > pick a save > load it > wait until Jill can move.
+//   5. Then: die (or use a Death screen) and load a save from the death screen too, if you can.
+//   6. Log tab > right-click > Save (or select all and copy) > send me the text.
+//   7. Close x32dbg (Detach first: Debug > Detach) so the game carries on.
+//
+// Nothing here changes the game; it only records who calls the load functions, which is the
+// last piece needed to start a load ourselves (the "proper" autoload fix).
+
+// Load menu factory: who creates the Load menu (title screen / death screen)?
+bp 52D890
+bpcond 52D890, 0
+bplog 52D890, "[AL] new Load menu  caller={a:[esp]}"
+
+// Load menu update reaching state 7 (= loading the chosen slot)
+bp 52E400
+bpcond 52E400, 0
+bplogcondition 52E400, "[ecx+25C]==7"
+bplog 52E400, "[AL] Load menu state 7  menu={p:ecx} slot={d:[ecx+260]} caller={a:[esp]}"
+
+// Load menu finished (returns 1): who owns it and starts the scene afterwards?
+bp 52E84E
+bpcond 52E84E, 0
+bplog 52E84E, "[AL] Load menu done  owner returns to {a:[esp+C]}"
+
+// Save object request (mode 9/10 = read headers, 0-7 = load that slot)
+bp 48FC10
+bpcond 48FC10, 0
+bplog 48FC10, "[AL] save op  this={p:ecx} mode={d:[esp+4]} caller={a:[esp]}"
+
+// The actual slot load
+bp 48FD60
+bpcond 48FD60, 0
+bplog 48FD60, "[AL] load slot  this={p:ecx} slot={d:[esp+4]} caller={a:[esp]}"
+
+log "[AL] autoload trace armed - now load a save in the game"
+ret

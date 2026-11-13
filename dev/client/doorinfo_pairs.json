@@ -1,0 +1,1965 @@
+{
+"_source": "door\\doorinfo in nativePC\\arc\\ingamecommon.arc (Steam build), read 2026-11-12. door_type: 0/1 single door, 2 double door, 3 ladder (do119), 4 lift/elevator.",
+"doors": [
+{
+"src": "100",
+"dest": "101",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "100",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "102",
+"door_type": 1,
+"model": "do126",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "103",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "202",
+"door_type": 1,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "203",
+"door_type": 1,
+"model": "do110",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "215",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "101",
+"dest": "214",
+"door_type": 1,
+"model": "do126",
+"motion": 0
+},
+{
+"src": "102",
+"dest": "101",
+"door_type": 1,
+"model": "do126",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "101",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "103",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "103",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "10c",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "10d",
+"door_type": 0,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "10e",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "105",
+"door_type": 1,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "10f",
+"door_type": 0,
+"model": "do130",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "112",
+"door_type": 1,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "103",
+"dest": "21c",
+"door_type": 0,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "105",
+"dest": "103",
+"door_type": 0,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "105",
+"dest": "106",
+"door_type": 2,
+"model": "do117",
+"motion": 6
+},
+{
+"src": "106",
+"dest": "105",
+"door_type": 2,
+"model": "do117",
+"motion": 6
+},
+{
+"src": "106",
+"dest": "107",
+"door_type": 2,
+"model": "do116",
+"motion": 4
+},
+{
+"src": "106",
+"dest": "10b",
+"door_type": 0,
+"model": "do134",
+"motion": 0
+},
+{
+"src": "106",
+"dest": "111",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "106",
+"dest": "202",
+"door_type": 2,
+"model": "do117",
+"motion": 6
+},
+{
+"src": "106",
+"dest": "203",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "106",
+"dest": "204",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "106",
+"dest": "212",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "106",
+"dest": "31a",
+"door_type": 2,
+"model": "do109",
+"motion": 4
+},
+{
+"src": "107",
+"dest": "106",
+"door_type": 2,
+"model": "do116",
+"motion": 4
+},
+{
+"src": "107",
+"dest": "108",
+"door_type": 1,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "107",
+"dest": "11c",
+"door_type": 0,
+"model": "do124",
+"motion": 0
+},
+{
+"src": "108",
+"dest": "107",
+"door_type": 0,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "108",
+"dest": "109",
+"door_type": 1,
+"model": "do128",
+"motion": 0
+},
+{
+"src": "109",
+"dest": "108",
+"door_type": 0,
+"model": "do128",
+"motion": 0
+},
+{
+"src": "109",
+"dest": "10a",
+"door_type": 2,
+"model": "do115",
+"motion": 4
+},
+{
+"src": "109",
+"dest": "109",
+"door_type": 1,
+"model": "do107",
+"motion": 0
+},
+{
+"src": "109",
+"dest": "109",
+"door_type": 0,
+"model": "do107",
+"motion": 0
+},
+{
+"src": "109",
+"dest": "114",
+"door_type": 0,
+"model": "do108",
+"motion": 0
+},
+{
+"src": "109",
+"dest": "115",
+"door_type": 0,
+"model": "do128",
+"motion": 0
+},
+{
+"src": "10a",
+"dest": "109",
+"door_type": 2,
+"model": "do115",
+"motion": 4
+},
+{
+"src": "10a",
+"dest": "119",
+"door_type": 0,
+"model": "do123",
+"motion": 0
+},
+{
+"src": "10a",
+"dest": "117",
+"door_type": 0,
+"model": "do106",
+"motion": 0
+},
+{
+"src": "10a",
+"dest": "11a",
+"door_type": 1,
+"model": "do112",
+"motion": 0
+},
+{
+"src": "10a",
+"dest": "207",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "10b",
+"dest": "106",
+"door_type": 1,
+"model": "do134",
+"motion": 0
+},
+{
+"src": "10b",
+"dest": "117",
+"door_type": 0,
+"model": "do135",
+"motion": 0
+},
+{
+"src": "10c",
+"dest": "103",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "10d",
+"dest": "103",
+"door_type": 1,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "10e",
+"dest": "103",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "10f",
+"dest": "103",
+"door_type": 1,
+"model": "do130",
+"motion": 0
+},
+{
+"src": "111",
+"dest": "106",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "111",
+"dest": "111",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "111",
+"dest": "111",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "112",
+"dest": "103",
+"door_type": 0,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "112",
+"dest": "214",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "114",
+"dest": "109",
+"door_type": 1,
+"model": "do108",
+"motion": 0
+},
+{
+"src": "115",
+"dest": "116",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "115",
+"dest": "109",
+"door_type": 1,
+"model": "do128",
+"motion": 0
+},
+{
+"src": "115",
+"dest": "109",
+"door_type": 1,
+"model": "do128",
+"motion": 24
+},
+{
+"src": "116",
+"dest": "115",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "117",
+"dest": "10a",
+"door_type": 1,
+"model": "do106",
+"motion": 0
+},
+{
+"src": "117",
+"dest": "10b",
+"door_type": 1,
+"model": "do135",
+"motion": 0
+},
+{
+"src": "118",
+"dest": "207",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "119",
+"dest": "10a",
+"door_type": 1,
+"model": "do123",
+"motion": 0
+},
+{
+"src": "11a",
+"dest": "10a",
+"door_type": 0,
+"model": "do112",
+"motion": 0
+},
+{
+"src": "11a",
+"dest": "11b",
+"door_type": 0,
+"model": "do129",
+"motion": 0
+},
+{
+"src": "11b",
+"dest": "11a",
+"door_type": 1,
+"model": "do129",
+"motion": 0
+},
+{
+"src": "11b",
+"dest": "300",
+"door_type": 2,
+"model": "do131",
+"motion": 4
+},
+{
+"src": "11b",
+"dest": "311",
+"door_type": 0,
+"model": "do304",
+"motion": 0
+},
+{
+"src": "11c",
+"dest": "107",
+"door_type": 1,
+"model": "do124",
+"motion": 0
+},
+{
+"src": "200",
+"dest": "213",
+"door_type": 4,
+"model": "do125",
+"motion": 8
+},
+{
+"src": "200",
+"dest": "21c",
+"door_type": 4,
+"model": "do125",
+"motion": 8
+},
+{
+"src": "202",
+"dest": "101",
+"door_type": 0,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "202",
+"dest": "106",
+"door_type": 2,
+"model": "do117",
+"motion": 6
+},
+{
+"src": "202",
+"dest": "214",
+"door_type": 0,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "203",
+"dest": "101",
+"door_type": 0,
+"model": "do110",
+"motion": 0
+},
+{
+"src": "203",
+"dest": "106",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "204",
+"dest": "106",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "204",
+"dest": "205",
+"door_type": 2,
+"model": "do118",
+"motion": 6
+},
+{
+"src": "204",
+"dest": "206",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "204",
+"dest": "207",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "204",
+"dest": "20d",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "205",
+"dest": "204",
+"door_type": 2,
+"model": "do118",
+"motion": 6
+},
+{
+"src": "206",
+"dest": "204",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "206",
+"dest": "207",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "10a",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "118",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "204",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "206",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "208",
+"door_type": 1,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "207",
+"dest": "20b",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "208",
+"dest": "207",
+"door_type": 0,
+"model": "do103",
+"motion": 0
+},
+{
+"src": "208",
+"dest": "209",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "208",
+"dest": "20a",
+"door_type": 1,
+"model": "do107",
+"motion": 0
+},
+{
+"src": "209",
+"dest": "208",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "20a",
+"dest": "208",
+"door_type": 0,
+"model": "do107",
+"motion": 0
+},
+{
+"src": "20b",
+"dest": "207",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "20b",
+"dest": "20c",
+"door_type": 0,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "20c",
+"dest": "20b",
+"door_type": 1,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "20c",
+"dest": "21a",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "20d",
+"dest": "204",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "20d",
+"dest": "20e",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "20e",
+"dest": "20d",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "20e",
+"dest": "20f",
+"door_type": 0,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "20e",
+"dest": "210",
+"door_type": 1,
+"model": "do111",
+"motion": 0
+},
+{
+"src": "20f",
+"dest": "20e",
+"door_type": 1,
+"model": "do101",
+"motion": 0
+},
+{
+"src": "210",
+"dest": "20e",
+"door_type": 0,
+"model": "do111",
+"motion": 0
+},
+{
+"src": "212",
+"dest": "106",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "213",
+"dest": "214",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "213",
+"dest": "216",
+"door_type": 2,
+"model": "do116",
+"motion": 4
+},
+{
+"src": "213",
+"dest": "219",
+"door_type": 1,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "213",
+"dest": "200",
+"door_type": 4,
+"model": "do125",
+"motion": 8
+},
+{
+"src": "214",
+"dest": "101",
+"door_type": 1,
+"model": "do126",
+"motion": 0
+},
+{
+"src": "214",
+"dest": "112",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "214",
+"dest": "202",
+"door_type": 1,
+"model": "do104",
+"motion": 0
+},
+{
+"src": "214",
+"dest": "213",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "214",
+"dest": "217",
+"door_type": 0,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "215",
+"dest": "101",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "216",
+"dest": "213",
+"door_type": 2,
+"model": "do116",
+"motion": 4
+},
+{
+"src": "216",
+"dest": "217",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "217",
+"dest": "214",
+"door_type": 1,
+"model": "do102",
+"motion": 0
+},
+{
+"src": "217",
+"dest": "216",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "219",
+"dest": "213",
+"door_type": 0,
+"model": "do100",
+"motion": 0
+},
+{
+"src": "21a",
+"dest": "20c",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "21a",
+"dest": "21b",
+"door_type": 1,
+"model": "do132",
+"motion": 0
+},
+{
+"src": "21b",
+"dest": "21a",
+"door_type": 0,
+"model": "do132",
+"motion": 0
+},
+{
+"src": "21b",
+"dest": "21c",
+"door_type": 0,
+"model": "do114",
+"motion": 0
+},
+{
+"src": "21c",
+"dest": "103",
+"door_type": 1,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "21c",
+"dest": "200",
+"door_type": 4,
+"model": "do125",
+"motion": 8
+},
+{
+"src": "21c",
+"dest": "21b",
+"door_type": 1,
+"model": "do114",
+"motion": 0
+},
+{
+"src": "300",
+"dest": "301",
+"door_type": 2,
+"model": "do301",
+"motion": 4
+},
+{
+"src": "300",
+"dest": "302",
+"door_type": 4,
+"model": "do308",
+"motion": 10
+},
+{
+"src": "300",
+"dest": "11b",
+"door_type": 2,
+"model": "do131",
+"motion": 4
+},
+{
+"src": "301",
+"dest": "300",
+"door_type": 2,
+"model": "do301",
+"motion": 4
+},
+{
+"src": "301",
+"dest": "302",
+"door_type": 4,
+"model": "do308",
+"motion": 10
+},
+{
+"src": "302",
+"dest": "300",
+"door_type": 4,
+"model": "do308",
+"motion": 9
+},
+{
+"src": "302",
+"dest": "301",
+"door_type": 4,
+"model": "do308",
+"motion": 9
+},
+{
+"src": "302",
+"dest": "304",
+"door_type": 2,
+"model": "do301",
+"motion": 4
+},
+{
+"src": "302",
+"dest": "307",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "303",
+"dest": "50d",
+"door_type": 4,
+"model": "do507",
+"motion": 20
+},
+{
+"src": "304",
+"dest": "302",
+"door_type": 2,
+"model": "do301",
+"motion": 4
+},
+{
+"src": "304",
+"dest": "400",
+"door_type": 1,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "305",
+"dest": "315",
+"door_type": 4,
+"model": "do307",
+"motion": 12
+},
+{
+"src": "305",
+"dest": "500",
+"door_type": 2,
+"model": "do500",
+"motion": 25
+},
+{
+"src": "306",
+"dest": "30f",
+"door_type": 0,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "307",
+"dest": "302",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "307",
+"dest": "308",
+"door_type": 0,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "307",
+"dest": "30b",
+"door_type": 1,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "308",
+"dest": "307",
+"door_type": 1,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "308",
+"dest": "309",
+"door_type": 1,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "309",
+"dest": "308",
+"door_type": 0,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "309",
+"dest": "30a",
+"door_type": 0,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "309",
+"dest": "316",
+"door_type": 4,
+"model": "do306",
+"motion": 10
+},
+{
+"src": "30a",
+"dest": "309",
+"door_type": 1,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "30b",
+"dest": "307",
+"door_type": 0,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "30b",
+"dest": "30c",
+"door_type": 2,
+"model": "do312",
+"motion": 4
+},
+{
+"src": "30c",
+"dest": "30b",
+"door_type": 2,
+"model": "do312",
+"motion": 4
+},
+{
+"src": "30c",
+"dest": "30d",
+"door_type": 2,
+"model": "do303",
+"motion": 4
+},
+{
+"src": "30d",
+"dest": "30c",
+"door_type": 2,
+"model": "do303",
+"motion": 4
+},
+{
+"src": "30d",
+"dest": "30e",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "30d",
+"dest": "30f",
+"door_type": 0,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "30e",
+"dest": "30d",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "30f",
+"dest": "306",
+"door_type": 1,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "30f",
+"dest": "30d",
+"door_type": 1,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "311",
+"dest": "11b",
+"door_type": 1,
+"model": "do304",
+"motion": 0
+},
+{
+"src": "311",
+"dest": "312",
+"door_type": 2,
+"model": "do311",
+"motion": 4
+},
+{
+"src": "312",
+"dest": "311",
+"door_type": 2,
+"model": "do311",
+"motion": 4
+},
+{
+"src": "312",
+"dest": "313",
+"door_type": 2,
+"model": "do311",
+"motion": 4
+},
+{
+"src": "313",
+"dest": "312",
+"door_type": 2,
+"model": "do311",
+"motion": 4
+},
+{
+"src": "313",
+"dest": "314",
+"door_type": 1,
+"model": "do304",
+"motion": 0
+},
+{
+"src": "314",
+"dest": "313",
+"door_type": 0,
+"model": "do304",
+"motion": 0
+},
+{
+"src": "314",
+"dest": "319",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "31a",
+"dest": "106",
+"door_type": 2,
+"model": "do109",
+"motion": 4
+},
+{
+"src": "31a",
+"dest": "315",
+"door_type": 0,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "315",
+"dest": "305",
+"door_type": 4,
+"model": "do307",
+"motion": 11
+},
+{
+"src": "315",
+"dest": "31a",
+"door_type": 1,
+"model": "do310",
+"motion": 0
+},
+{
+"src": "316",
+"dest": "309",
+"door_type": 4,
+"model": "do306",
+"motion": 9
+},
+{
+"src": "316",
+"dest": "317",
+"door_type": 0,
+"model": "do510",
+"motion": 0
+},
+{
+"src": "317",
+"dest": "316",
+"door_type": 1,
+"model": "do510",
+"motion": 0
+},
+{
+"src": "317",
+"dest": "318",
+"door_type": 0,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "317",
+"dest": "319",
+"door_type": 1,
+"model": "do309",
+"motion": 0
+},
+{
+"src": "318",
+"dest": "317",
+"door_type": 1,
+"model": "do302",
+"motion": 2
+},
+{
+"src": "319",
+"dest": "317",
+"door_type": 0,
+"model": "do309",
+"motion": 0
+},
+{
+"src": "319",
+"dest": "314",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "319",
+"dest": "314",
+"door_type": 3,
+"model": "do119",
+"motion": 21
+},
+{
+"src": "400",
+"dest": "304",
+"door_type": 0,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "400",
+"dest": "401",
+"door_type": 1,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "400",
+"dest": "403",
+"door_type": 1,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "400",
+"dest": "404",
+"door_type": 2,
+"model": "do402",
+"motion": 6
+},
+{
+"src": "400",
+"dest": "405",
+"door_type": 0,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "401",
+"dest": "400",
+"door_type": 0,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "401",
+"dest": "402",
+"door_type": 1,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "402",
+"dest": "401",
+"door_type": 0,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "403",
+"dest": "400",
+"door_type": 0,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "404",
+"dest": "400",
+"door_type": 2,
+"model": "do402",
+"motion": 6
+},
+{
+"src": "405",
+"dest": "400",
+"door_type": 1,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "405",
+"dest": "406",
+"door_type": 1,
+"model": "do413",
+"motion": 0
+},
+{
+"src": "405",
+"dest": "408",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "406",
+"dest": "405",
+"door_type": 0,
+"model": "do413",
+"motion": 0
+},
+{
+"src": "406",
+"dest": "407",
+"door_type": 1,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "406",
+"dest": "40d",
+"door_type": 3,
+"model": "do404",
+"motion": 21
+},
+{
+"src": "407",
+"dest": "406",
+"door_type": 0,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "408",
+"dest": "405",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "408",
+"dest": "409",
+"door_type": 1,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "408",
+"dest": "40a",
+"door_type": 1,
+"model": "do412",
+"motion": 0
+},
+{
+"src": "408",
+"dest": "40c",
+"door_type": 2,
+"model": "do403",
+"motion": 4
+},
+{
+"src": "409",
+"dest": "408",
+"door_type": 0,
+"model": "do113",
+"motion": 0
+},
+{
+"src": "40a",
+"dest": "408",
+"door_type": 0,
+"model": "do412",
+"motion": 0
+},
+{
+"src": "40a",
+"dest": "40b",
+"door_type": 1,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "40a",
+"dest": "40c",
+"door_type": 0,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "40b",
+"dest": "40a",
+"door_type": 0,
+"model": "do408",
+"motion": 0
+},
+{
+"src": "40c",
+"dest": "408",
+"door_type": 2,
+"model": "do403",
+"motion": 4
+},
+{
+"src": "40c",
+"dest": "40a",
+"door_type": 1,
+"model": "do401",
+"motion": 0
+},
+{
+"src": "40d",
+"dest": "406",
+"door_type": 3,
+"model": "do404",
+"motion": 21
+},
+{
+"src": "40d",
+"dest": "40e",
+"door_type": 2,
+"model": "do409",
+"motion": 4
+},
+{
+"src": "40d",
+"dest": "40d",
+"door_type": 1,
+"model": "do411",
+"motion": 0
+},
+{
+"src": "40d",
+"dest": "410",
+"door_type": 2,
+"model": "do513",
+"motion": 4
+},
+{
+"src": "40d",
+"dest": "40d",
+"door_type": 0,
+"model": "do411",
+"motion": 0
+},
+{
+"src": "40e",
+"dest": "40d",
+"door_type": 2,
+"model": "do409",
+"motion": 4
+},
+{
+"src": "40e",
+"dest": "40f",
+"door_type": 1,
+"model": "do411",
+"motion": 0
+},
+{
+"src": "40e",
+"dest": "411",
+"door_type": 2,
+"model": "do406",
+"motion": 4
+},
+{
+"src": "40f",
+"dest": "40e",
+"door_type": 0,
+"model": "do411",
+"motion": 0
+},
+{
+"src": "40f",
+"dest": "40c",
+"door_type": 0,
+"model": "do411",
+"motion": 0
+},
+{
+"src": "410",
+"dest": "40d",
+"door_type": 2,
+"model": "do513",
+"motion": 4
+},
+{
+"src": "410",
+"dest": "411",
+"door_type": 1,
+"model": "do414",
+"motion": 0
+},
+{
+"src": "410",
+"dest": "412",
+"door_type": 2,
+"model": "do405",
+"motion": 4
+},
+{
+"src": "411",
+"dest": "40e",
+"door_type": 2,
+"model": "do406",
+"motion": 4
+},
+{
+"src": "411",
+"dest": "410",
+"door_type": 0,
+"model": "do414",
+"motion": 0
+},
+{
+"src": "412",
+"dest": "410",
+"door_type": 2,
+"model": "do405",
+"motion": 4
+},
+{
+"src": "500",
+"dest": "305",
+"door_type": 2,
+"model": "do513",
+"motion": 4
+},
+{
+"src": "500",
+"dest": "501",
+"door_type": 2,
+"model": "do509",
+"motion": 6
+},
+{
+"src": "500",
+"dest": "502",
+"door_type": 3,
+"model": "do404",
+"motion": 21
+},
+{
+"src": "500",
+"dest": "515",
+"door_type": 0,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "501",
+"dest": "500",
+"door_type": 2,
+"model": "do509",
+"motion": 6
+},
+{
+"src": "501",
+"dest": "50d",
+"door_type": 4,
+"model": "do507",
+"motion": 20
+},
+{
+"src": "502",
+"dest": "500",
+"door_type": 3,
+"model": "do404",
+"motion": 21
+},
+{
+"src": "502",
+"dest": "503",
+"door_type": 2,
+"model": "do502",
+"motion": 6
+},
+{
+"src": "503",
+"dest": "502",
+"door_type": 2,
+"model": "do502",
+"motion": 6
+},
+{
+"src": "503",
+"dest": "504",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "503",
+"dest": "505",
+"door_type": 2,
+"model": "do513",
+"motion": 4
+},
+{
+"src": "505",
+"dest": "503",
+"door_type": 2,
+"model": "do513",
+"motion": 4
+},
+{
+"src": "505",
+"dest": "506",
+"door_type": 2,
+"model": "do502",
+"motion": 4
+},
+{
+"src": "505",
+"dest": "507",
+"door_type": 2,
+"model": "do502",
+"motion": 4
+},
+{
+"src": "505",
+"dest": "508",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "505",
+"dest": "50c",
+"door_type": 0,
+"model": "do504",
+"motion": 2
+},
+{
+"src": "504",
+"dest": "503",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "506",
+"dest": "505",
+"door_type": 2,
+"model": "do502",
+"motion": 4
+},
+{
+"src": "507",
+"dest": "505",
+"door_type": 2,
+"model": "do502",
+"motion": 4
+},
+{
+"src": "507",
+"dest": "50c",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "508",
+"dest": "505",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "508",
+"dest": "509",
+"door_type": 1,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "508",
+"dest": "50a",
+"door_type": 1,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "508",
+"dest": "50b",
+"door_type": 2,
+"model": "do511",
+"motion": 4
+},
+{
+"src": "509",
+"dest": "508",
+"door_type": 0,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "50a",
+"dest": "508",
+"door_type": 0,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "50b",
+"dest": "508",
+"door_type": 2,
+"model": "do511",
+"motion": 4
+},
+{
+"src": "50b",
+"dest": "512",
+"door_type": 1,
+"model": "do505",
+"motion": 0
+},
+{
+"src": "50c",
+"dest": "505",
+"door_type": 1,
+"model": "do504",
+"motion": 2
+},
+{
+"src": "50c",
+"dest": "507",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "50c",
+"dest": "50e",
+"door_type": 0,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "50c",
+"dest": "50f",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "50c",
+"dest": "515",
+"door_type": 4,
+"model": "do506",
+"motion": 13
+},
+{
+"src": "50d",
+"dest": "303",
+"door_type": 4,
+"model": "do507",
+"motion": 20
+},
+{
+"src": "50d",
+"dest": "501",
+"door_type": 4,
+"model": "do507",
+"motion": 20
+},
+{
+"src": "50e",
+"dest": "50c",
+"door_type": 1,
+"model": "do514",
+"motion": 0
+},
+{
+"src": "50f",
+"dest": "50c",
+"door_type": 2,
+"model": "do503",
+"motion": 6
+},
+{
+"src": "50f",
+"dest": "510",
+"door_type": 0,
+"model": "do510",
+"motion": 0
+},
+{
+"src": "510",
+"dest": "50f",
+"door_type": 1,
+"model": "do510",
+"motion": 0
+},
+{
+"src": "510",
+"dest": "511",
+"door_type": 2,
+"model": "do508",
+"motion": 6
+},
+{
+"src": "511",
+"dest": "510",
+"door_type": 2,
+"model": "do508",
+"motion": 6
+},
+{
+"src": "512",
+"dest": "50b",
+"door_type": 0,
+"model": "do505",
+"motion": 0
+},
+{
+"src": "513",
+"dest": "514",
+"door_type": 0,
+"model": "do512",
+"motion": 17
+},
+{
+"src": "514",
+"dest": "513",
+"door_type": 0,
+"model": "do512",
+"motion": 17
+},
+{
+"src": "514",
+"dest": "515",
+"door_type": 4,
+"model": "do506",
+"motion": 13
+},
+{
+"src": "515",
+"dest": "500",
+"door_type": 4,
+"model": "do127",
+"motion": 0
+},
+{
+"src": "515",
+"dest": "50c",
+"door_type": 4,
+"model": "do506",
+"motion": 13
+},
+{
+"src": "515",
+"dest": "514",
+"door_type": 4,
+"model": "do506",
+"motion": 13
+},
+{
+"src": "20e",
+"dest": "100",
+"door_type": 1,
+"model": "do127",
+"motion": 0
+}
+]
+}
