@@ -1,0 +1,232 @@
+# Resident Evil HD Remaster - Archipelago player settings
+#
+# Copy this file into your Archipelago "Players" folder, set "name" to your slot name and adjust
+# the options below. Every option lists its possible values and its default. Options left out of
+# this file use their default.
+
+name: ResidentEvilHD
+description: Resident Evil HD Remaster (Jill, Normal)
+game: Resident Evil HD Remaster
+requires:
+  version: 0.6.7
+
+Resident Evil HD Remaster:
+
+  # ---------------------------------------------------------------------------------------------
+  # Archipelago
+  # ---------------------------------------------------------------------------------------------
+
+  # How strongly progression items are moved earlier in the multiworld. 0 to 99.
+  # Default: 50
+  progression_balancing: 50
+
+  # full:    every location can be reached.
+  # minimal: only what is needed to finish can be guaranteed to be reachable.
+  # Default: full
+  accessibility: full
+
+  # ---------------------------------------------------------------------------------------------
+  # Victory condition
+  # ---------------------------------------------------------------------------------------------
+
+  # complete_game:  escape on the helicopter at the end of the game.
+  # mansion_escape: leave the Mansion for the Courtyard (a shorter game).
+  # Default: complete_game
+  goal: complete_game
+
+  # ---------------------------------------------------------------------------------------------
+  # Locations
+  # Every item pickup is always a location. These options add more.
+  # ---------------------------------------------------------------------------------------------
+
+  # Picking up a map is a location. You still receive the map.
+  # Default: true
+  map_checks: true
+
+  # Entering each room for the first time is a location.
+  # Default: false
+  first_room_entries: true
+
+  # Reading each file or note for the first time is a location. You keep the file.
+  # Default: false
+  files_and_notes: true
+
+  # ---------------------------------------------------------------------------------------------
+  # Items
+  # ---------------------------------------------------------------------------------------------
+
+  # Where items received from the multiworld are placed. The Lock Pick and the Book of Curses
+  # (Sword Key) always go straight to Jill's inventory.
+  # item_box:           in the item box.
+  # inventory_then_box: in Jill's inventory when there is space, otherwise in the item box.
+  # Default: item_box
+  received_item_destination: item_box
+
+  # Start the game holding the Book of Curses, which contains the Sword Key.
+  # Default: false
+  start_with_sword_key: false
+
+  # Start a new game with two random items instead of the Handgun and Combat Knife, which are
+  # added to the item pool.
+  # Default: false
+  random_starting_inventory: true
+
+  # With random_starting_inventory, one of the two starting items is always a gun.
+  # Default: true
+  random_start_guaranteed_gun: true
+
+  # Percentage of the remaining filler items replaced by special items. 0 to 100.
+  # Default: 0
+  special_item_percentage: 5
+
+  # Relative weights of the special items. 0 to 100.
+  #   infinite_ammo:  the equipped gun uses no ammo for 20 seconds.
+  #   defence_bundle: one Dagger and one Battery Pack.
+  # Default: 50 each
+  infinite_ammo_weight: 50
+  defence_bundle_weight: 50
+
+  # ---------------------------------------------------------------------------------------------
+  # Doors
+  # ---------------------------------------------------------------------------------------------
+
+  # Shuffles which key opens which door. Each key arrives with as many uses as it has doors.
+  # disabled:     normal locks.
+  # mansion_only: Mansion doors with Mansion keys.
+  # regional:     Mansion, Residence and Laboratory doors, each area keeping its own keys.
+  # full:         any key on any of those doors.
+  # Default: disabled
+  door_lock_randomisation: disabled
+
+  # The number of locked doors when door_lock_randomisation is on.
+  # vanilla: the normal number (24 for mansion_only, 30 otherwise). fewer: 25% fewer.
+  # more: 25% more. many: 50% more. Or an exact number: up to 42 for mansion_only, 65 otherwise.
+  # Default: vanilla
+  locked_door_count: vanilla
+
+  # EXPERIMENTAL: still being tested. A story event that doesn't expect a changed door can trap
+  # Jill, so keep a spare save.
+  # Shuffles where doors, ladders and lifts lead. Locks stay on their doors, every seed is
+  # beatable and every reachable room has a way back. The client's Key Map shows where a door
+  # leads once you have used it.
+  # off:       normal doors.
+  # coupled:   going back through a door returns you to where you came from.
+  # decoupled: every door always leads to the same place, but not necessarily back.
+  # Default: off
+  door_randomisation: off
+
+  # ---------------------------------------------------------------------------------------------
+  # Death Link
+  # ---------------------------------------------------------------------------------------------
+
+  # When Jill dies, everyone else with Death Link dies too, and the reverse.
+  # Default: false
+  death_link: false
+
+  # What happens to Jill when a Death Link is received.
+  # kill:              Jill dies.
+  # lose_health_state: Jill loses one health state.
+  # Default: kill
+  death_link_effect: kill
+
+  # ---------------------------------------------------------------------------------------------
+  # Quality of life
+  # ---------------------------------------------------------------------------------------------
+
+  # Sort the item box when entering an item box room (keys first, stacks merged).
+  # Default: true
+  item_box_auto_sort: true
+
+  # Open the item box away from item boxes with F7, the item_box_button or /itembox.
+  # off:        item boxes only.
+  # save_rooms: in rooms with a typewriter.
+  # anywhere:   in any room.
+  # Default: save_rooms
+  item_box_anywhere: save_rooms
+
+  # Controller button that opens the item box when item_box_anywhere is on.
+  # off, lb_l1, rb_r1, lt_l2, rt_r2, l3, r3, back_select, back_plus_lb (hold Back/Select, press LB/L1)
+  # Default: lb_l1
+  item_box_button: lb_l1
+
+  # Shortcut buttons on the client's Key Map: the next door Jill goes through leads to the Main
+  # Hall, the Garden Shed or the Laboratory Entrance. Each unlocks once that room has been visited.
+  # Default: true
+  key_map_shortcuts: true
+
+  # Skip the door-opening animations.
+  # Default: false
+  door_skip: true
+
+  # Save automatically, without an Ink Ribbon, when entering a save room. The starting item box's
+  # Ink Ribbons are replaced by a random item.
+  # Default: false
+  autosave: true
+
+  # The save slot used by autosave (1 to 8). Do not save to this slot manually.
+  # Default: 8
+  autosave_slot: 8
+
+  # Run the game borderless fullscreen so Archipelago messages appear over it. Set the game itself
+  # to windowed mode.
+  # Default: false
+  borderless_fullscreen: true
+
+  # The game's rendering resolution, applied the next time the game starts. Resolutions above
+  # your monitor's are skipped.
+  # keep, 1080p, 1440p, 4k
+  # Default: keep
+  game_resolution: keep
+
+  # ---------------------------------------------------------------------------------------------
+  # Traps
+  # ---------------------------------------------------------------------------------------------
+
+  # Percentage of filler items replaced by traps. 0 to 100.
+  # Default: 0
+  trap_percentage: 5
+
+  # Relative weights of the traps. 0 to 100.
+  #   damage:          Jill loses health (see damage_trap_amount).
+  #   poison:          Jill is poisoned until cured with a Blue Herb.
+  #   critical_damage: Jill drops to 1 health. It never kills.
+  #   ammo_leak:       one stack of ammo in the inventory or item box is lost.
+  # Defaults: 50, 50, 5, 25
+  damage_trap_weight: 50
+  poison_trap_weight: 50
+  critical_damage_trap_weight: 5
+  ammo_leak_trap_weight: 25
+
+  # Health taken by a Damage Trap, as a percentage of Jill's maximum health (5 to 100). It always
+  # takes at least one health state.
+  # Default: 25
+  damage_trap_amount: 25
+
+  # Whether a Damage Trap can kill Jill. When false, it never takes her below 1 health.
+  # Default: false
+  damage_trap_can_kill: false
+
+  # Percentage of the remaining filler items replaced by fun traps: harmless pranks that do not
+  # affect the game. The Archipelago message for a fun trap appears once the prank is over.
+  # 0 to 100.
+  # Default: 0
+  fun_trap_percentage: 3
+
+  # Relative weights of the fun traps. 0 to 100.
+  #   fake_crash:      a fake error message (at most one per seed).
+  #   to_be_continued: the screen fades to "To Be Continued...".
+  #   fake_item:       a message announcing a key item that does not arrive.
+  #   fake_death_link: a Death Link message with no effect.
+  #   window_shake:    the game window shakes briefly (windowed or borderless only).
+  #   self_destruct:   a fake self-destruct announcement.
+  #   danger_flash:    the screen edges pulse red. No damage.
+  #   wrong_door:      the next door leads to the Laboratory Cell, locked for 15 seconds, then back.
+  # Defaults: 5, 25, 30, 25, 25, 25, 25, 25
+  fake_crash_trap_weight: 5
+  to_be_continued_trap_weight: 25
+  fake_item_trap_weight: 30
+  fake_death_link_trap_weight: 25
+  window_shake_trap_weight: 25
+  self_destruct_trap_weight: 25
+  danger_flash_trap_weight: 25
+  wrong_door_trap_weight: 25
