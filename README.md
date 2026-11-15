@@ -15,13 +15,14 @@ Supports Jill on Normal difficulty, for the whole game.
 
 **Goals**
 - Escape on the helicopter at the end of the game, or a shorter game ending in the Courtyard.
+- Boss Rush (experimental): the Signal Rockets only come once seven bosses are dead.
 
 **Randomisers**
 - Door lock randomiser: which key opens which door (Mansion only, per area, or across the whole
   game), with a configurable number of locked doors.
 - Door randomiser (experimental, still being tested): where doors, ladders and lifts lead,
   coupled or decoupled.
-- Random starting inventory.
+- Random starting inventory, and a random starting room (experimental: a random save room).
 - Every seed is checked to be beatable, with a way back from every reachable room.
 
 **Traps and specials**
@@ -36,11 +37,12 @@ Supports Jill on Normal difficulty, for the whole game.
 - Received items go to the item box, so nothing is lost when the inventory is full.
 - Open the item box from save rooms or anywhere (F7, a controller button or `/itembox`), with
   automatic sorting.
-- Autosave in save rooms without Ink Ribbons, and skipping of door animations.
+- Autosave in save rooms without Ink Ribbons, autoload after a death (experimental), and skipping
+  of door animations.
 - A Key Map of every floor in the client: doors coloured by key, Jill's room from her actual
-  position, hover details and shortcut buttons.
-- A Tracker of reachable locations, borderless fullscreen with on-screen messages, and a
-  resolution setting.
+  position, hover details, boss skulls and instant shortcut buttons to visited save rooms.
+- A Tracker of reachable locations (and Boss Rush progress), borderless fullscreen with on-screen
+  messages (item names coloured like the Archipelago client), and a resolution setting.
 
 ## Installation
 
@@ -81,7 +83,8 @@ python -m pytest worlds/re1hd/test
 
 - **Benn Powell**, whose RE HD Remaster randomiser inspired this project and served as its
   design reference.
-- **eleval**, for BhdTool: game builds, memory addresses, the item table and door skip.
+- **eleval**, for BhdTool: game builds, memory addresses, the item table, door skip and the room
+  jump method used by the random start room and shortcuts.
 - **Evil Resource**, for the room, item and door data and the maps the Key Map is traced from.
 - **The Archipelago team and community.**
 

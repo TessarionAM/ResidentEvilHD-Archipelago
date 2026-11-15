@@ -32,8 +32,9 @@ from typing import Dict, Optional
 
 from . import hd_versions as hv
 
-MAGIC = b"RE1HDAS8"           # v2: "call a game function"; v4: item box anywhere; v5: menu mode 5; v6: call arguments;
-                               # v7: calls that wait until Jill can move (IN_CONTROL); v8: call result (eax) kept
+MAGIC = b"RE1HDAS9"           # v2: "call a game function"; v4: item box anywhere; v5: menu mode 5; v6: call arguments;
+                               # v7: calls that wait until Jill can move (IN_CONTROL); v8: call result (eax) kept;
+                               # v9: autosave starts only while Jill can move (WAIT_CONTROL)
 OLD_MAGICS = (b"RE1HDAS1", b"RE1HDAS2", b"RE1HDAS3", b"RE1HDAS4", b"RE1HDAS5")   # an older client's routine: chained through, not reused
 
 # Rooms the game itself names in a save (from 0x490B90): stage*0x100 + room.
@@ -124,6 +125,12 @@ IDLE, REQUESTED, DONE, RUNNING = 0, 1, 2, 3
 # ("Failed open file ...\motion\pl\pl01\pl01_2w01.lmt").
 IN_CONTROL = 4
 IN_CONTROL_TIMEOUT = 20.0     # seconds: a request the stub never picked up is withdrawn
+# v9 (2026-11-14, TessarionAM): an autosave made 1.8 s before a pickup finished (the "take it?"
+# prompt was up) loads with the game stuck in that menu - no camera, no inventory, no item box.
+# The autosave request now waits in WAIT_CONTROL until the box stub (= the trigger scan, which
+# only runs while Jill can move) starts the save itself, in place of that frame's scan - so no
+# prompt can open in the frame the save copies the game. The late update carries it on.
+WAIT_CONTROL = 5
 
 
 class AutosaveError(Exception):
@@ -226,6 +233,38 @@ def box_stub_code(base: int, a: Dict[str, int], chain_to: Optional[int] = None) 
     d = lambda off: struct.pack("<I", base + off)
     i32 = lambda v: struct.pack("<I", v & 0xFFFFFFFF)
     asm = _Asm(base + BOX_STUB)
+    # --- autosave that must wait until Jill can move (v9): start it here, instead of this scan
+    asm.raw(b"\x83\x3D" + d(D_FLAG) + bytes([WAIT_CONTROL]))   # cmp [flag],5
+    asm.rel32(b"\x0F\x85", "incall")                       # jne incall
+    asm.raw(b"\x60\x9C")                                    # pushad / pushfd
+    asm.raw(b"\x8B\x35" + i32(a["inv_ptr"]))                # mov esi,[inv_ptr]
+    asm.raw(b"\x85\xF6")                                    # test esi,esi
+    asm.rel32(b"\x0F\x84", "notyet")
+    asm.raw(b"\x83\xBE" + i32(SAVE_OBJECT + STATE) + b"\x00")   # cmp [esi+state],0
+    asm.rel32(b"\x0F\x85", "notyet")                        # a save is running: wait
+    asm.raw(b"\xA1" + i32(a["savedata_singleton"]))         # mov eax,[storage]
+    asm.raw(b"\x85\xC0")                                    # test eax,eax
+    asm.rel32(b"\x0F\x84", "notyet")
+    asm.raw(b"\x83\x78" + bytes([STORAGE_BUSY]) + b"\x00")  # cmp [eax+0x24],0
+    asm.rel32(b"\x0F\x85", "notyet")                        # storage busy: wait
+    asm.raw(b"\xC7\x05" + d(D_FLAG) + i32(RUNNING))         # mov [flag],3 (late update carries on)
+    asm.raw(b"\x8D\x8E" + i32(SAVE_OBJECT))                 # lea ecx,[esi+0x5370]
+    asm.raw(b"\x6A\x03")                                    # push 3 (no Ink Ribbon)
+    asm.raw(b"\xFF\x35" + d(D_SLOT))                        # push [slot]
+    asm.rel32(b"\xE8", a["save_to_slot"])                   # call SaveToSlot (ret 8)
+    asm.raw(b"\x84\xC0")                                    # test al,al
+    asm.rel32(b"\x0F\x84", "skipscan")                      # not finished yet
+    asm.raw(b"\x8B\x86" + i32(SAVE_OBJECT + RESULT))        # mov eax,[esi+result]
+    asm.raw(b"\xA3" + d(D_RESULT))                          # mov [result],eax
+    asm.raw(b"\xFF\x05" + d(D_COUNT))                       # inc [count]
+    asm.raw(b"\xC7\x05" + d(D_FLAG) + i32(DONE))            # mov [flag],2
+    asm.label("skipscan")
+    asm.raw(b"\x9D\x61")                                    # popfd / popad
+    asm.raw(b"\xB8\x01\x00\x00\x00")                        # mov eax,1 (as the box path)
+    asm.raw(b"\xC2\x04\x00")                                # ret 4: no scan this frame
+    asm.label("notyet")
+    asm.raw(b"\x9D\x61")                                    # popfd / popad, then as usual
+    asm.label("incall")
     # --- a call that must wait until Jill can move (v7): same fields as request 2
     asm.raw(b"\x83\x3D" + d(D_CALL_FLAG) + bytes([IN_CONTROL]))   # cmp [call_flag],4
     asm.rel32(b"\x0F\x85", "box")                          # jne box
@@ -344,12 +383,18 @@ class Autosaver:
         return self._u32(inv + SAVE_OBJECT + STATE) == 0 and self._u32(store + STORAGE_BUSY) == 0
 
     def request(self, slot_index: int):
+        """Save to a slot. With the box stub in place the save starts only in a frame Jill can
+        move (WAIT_CONTROL, v9); without it, at the next late update (as before)."""
         if not 0 <= slot_index <= 7:
             raise AutosaveError("Save slot must be 1-8.")
-        if self.flag() in (REQUESTED, RUNNING):
+        if self.flag() in (REQUESTED, RUNNING, WAIT_CONTROL):
             raise AutosaveError("A save is already running.")
         self.conn.write_bytes(self.cave + D_SLOT, struct.pack("<I", slot_index))
-        self.conn.write_bytes(self.cave + D_FLAG, struct.pack("<I", REQUESTED))
+        flag = REQUESTED if self.box_hook_error else WAIT_CONTROL
+        self.conn.write_bytes(self.cave + D_FLAG, struct.pack("<I", flag))
+
+    def waiting_for_control(self) -> bool:
+        return self.flag() == WAIT_CONTROL
 
     def poll(self) -> Optional[int]:
         """None while saving; the game's result code (0 = saved) once done."""
@@ -361,7 +406,7 @@ class Autosaver:
 
     def cancel(self):
         """Give up a request that never started (e.g. the player left to the title screen)."""
-        if self.flag() == REQUESTED:
+        if self.flag() in (REQUESTED, WAIT_CONTROL):
             self.conn.write_bytes(self.cave + D_FLAG, struct.pack("<I", IDLE))
 
     # ------------------------------------------------------------------ calls

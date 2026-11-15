@@ -9,10 +9,11 @@ from typing import Dict, NamedTuple, Tuple
 
 from BaseClasses import Location
 
-from .data import EXTRA_CHECKS, PICKUPS
+from .data import BOSS_RUSH_LOCATION, EXTRA_CHECKS, PICKUPS
 
 BASE_ID = 1_302_100_000
 EXTRA_BASE_ID = BASE_ID + 10_000      # maps, and later typewriters / story / bosses / puzzles
+GOAL_BASE_ID = BASE_ID + 20_000       # goal-related checks (2026-11-14: Boss Rush)
 
 
 class RE1HDLocation(Location):
@@ -46,8 +47,12 @@ extra_location_table: Dict[str, ExtraData] = {
     for i, (category, room, name, req) in enumerate(EXTRA_CHECKS)
 }
 
+# Boss Rush (option boss_rush): sent by the client once all seven bosses are dead; holds the Signal Rockets.
+BOSS_RUSH_LOCATION_ID = GOAL_BASE_ID + 0
+
 all_location_ids: Dict[str, int] = {**{n: d.code for n, d in location_table.items()},
-                                    **{n: d.code for n, d in extra_location_table.items()}}
+                                    **{n: d.code for n, d in extra_location_table.items()},
+                                    BOSS_RUSH_LOCATION: BOSS_RUSH_LOCATION_ID}
 
 location_name_groups = {}
 for _name, _data in location_table.items():

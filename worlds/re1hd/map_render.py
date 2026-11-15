@@ -46,6 +46,16 @@ WALL_PX = 3                               # every wall line, every floor
 DOOR_PX = WALL_PX + 6                     # locked doors: thicker than the wall they sit on
 MIN_SCALE, MAX_SCALE = 2, 10              # pixels per cell
 PULSE_LOW, PULSE_HIGH, PULSE_SECONDS = 0.75, 1.5, 2.0   # Jill's room: 25% darker .. 50% brighter, 2 s loop
+# Boss Rush (TessarionAM, 2026-11-15): a small skull in each boss room while the boss is alive; it
+# disappears once the boss is dead (TessarionAM, 19:15). Drawn from rects (pixel art), like
+# everything else here.
+SKULL_ALIVE, SKULL_DEAD, SKULL_EYES = rgba("f2ead8"), rgba("6b6f76"), rgba("0b0c0e")
+SKULL = (".XXXXX.",
+         "XXXXXXX",
+         "X..X..X",
+         "XXXXXXX",
+         ".XX.XX.",
+         ".X.X.X.")
 
 
 def key_rgba(item: str):
@@ -72,6 +82,7 @@ class Scene:
         self.map_box = (0, 0, 0, 0)
         self.floor = None
         self.here: List[str] = []
+        self.skulls: List[Tuple[str, str, bool]] = []     # (drawn room, boss, dead) - Boss Rush
 
     def to_grid(self, px, py):
         return (px - self.ox) / self.s, (py - self.oy) / self.s
@@ -107,10 +118,24 @@ def _door_box(sc, d):
 
 
 # ------------------------------------------------------------------ the whole floor
+def skull_shapes(cx: int, cy: int, px: int, dead: bool) -> List[tuple]:
+    """A skull centred on cx, cy; px = size of one pixel-art cell."""
+    w, h = len(SKULL[0]) * px, len(SKULL) * px
+    x0, y0 = cx - w // 2, cy - h // 2
+    ops = [("rect", SKULL_EYES, x0 - 1, y0 - 1, w + 2, h + 2)]          # dark outline
+    bone = SKULL_DEAD if dead else SKULL_ALIVE
+    for r, row in enumerate(SKULL):
+        for c, ch in enumerate(row):
+            ops.append(("rect", bone if ch == "X" else SKULL_EYES, x0 + c * px, y0 + r * px, px, px))
+    return ops
+
+
 def build(floor_index: int, state, width: float, height: float, current_room: Optional[str],
-          measure: Measure, highlight: Optional[str] = None, here: Optional[List[str]] = None) -> Scene:
+          measure: Measure, highlight: Optional[str] = None, here: Optional[List[str]] = None,
+          bosses: Optional[dict] = None) -> Scene:
     """here: the drawn rooms Jill is in (from her position, map_position.locate). Without it,
-    every drawn room with her game room's number glows."""
+    every drawn room with her game room's number glows. bosses: Boss Rush on - boss event name ->
+    dead (the client's bosses_dead); None = no skulls."""
     _counts, doors, elsewhere = state
     f = floor(floor_index)
     sc = Scene()
@@ -182,7 +207,18 @@ def build(floor_index: int, state, width: float, height: float, current_room: Op
         dim = highlight is not None and not _lit(d, highlight)
         ops.extend(door_shapes(bx, by, bw, bh, d, FADE if dim else 1.0))
         sc.door_hits.append(((bx - 3, by - 3, bw + 6, bh + 6), d))
-    _legend(sc, leg_box, fdoors, elsewhere, f, measure, highlight)
+    if bosses is not None:
+        from .data import BOSSES
+        px = max(2, int(round(s * 0.55)))
+        for name, room, *_r in BOSSES:
+            if bosses.get(name):
+                continue                         # defeated: no skull
+            for drawn in f.names:
+                if drawn == room or logic_room(drawn) == room:
+                    lx, ly = f.label_at[drawn]
+                    ops.extend(skull_shapes(X(lx), Y(ly), px, bool(bosses.get(name))))
+                    sc.skulls.append((drawn, name.replace(" Defeated", ""), bool(bosses.get(name))))
+    _legend(sc, leg_box, fdoors, elsewhere, f, measure, highlight, sc.skulls)
     return sc
 
 
@@ -209,12 +245,15 @@ def _fit(text, size, maxw, measure, bold=False):
     return text.rstrip() + "..."
 
 
-def _legend(sc, box, fdoors, elsewhere, f, measure, highlight):
+def _legend(sc, box, fdoors, elsewhere, f, measure, highlight, skulls=()):
     ops = sc.ops
     bx, by, bw, bh = box
     ops.append(("rect", PANEL_EDGE, bx - 1, by - 1, bw + 2, bh + 2))
     ops.append(("rect", PANEL, bx, by, bw, bh))
-    rows = [("title", "Map key"), ("head", "Rooms"), ("jill", "Jill is here (glows)"), ("head", "Doors"),
+    rows = [("title", "Map key"), ("head", "Rooms"), ("jill", "Jill is here (glows)")]
+    for _drawn, boss, dead in skulls:
+        rows.append(("skull", (f"{boss}: {'defeated' if dead else 'still alive'}", dead)))
+    rows += [("head", "Doors"),
             ("door", ("open", dict(kind="open", ok=True), "ordinary / unlocked door"))]
     seen = {}
     for d in fdoors:
@@ -238,7 +277,7 @@ def _legend(sc, box, fdoors, elsewhere, f, measure, highlight):
     rows.append(("hint", "Hover a room or door for details."))
     rows.append(("hint", "Hover a key here to light up its doors."))
 
-    base = {"title": 28, "head": 24, "jill": 24, "open": 24, "door": 24, "hint": 18}
+    base = {"title": 28, "head": 24, "jill": 24, "open": 24, "door": 24, "hint": 18, "skull": 24}
     need = sum(base[k] for k, _ in rows) + 12
     k = max(0.62, min(1.0, (bh - 10) / need))
     fs = lambda n: max(9, int(round(n * k)))
@@ -265,6 +304,11 @@ def _legend(sc, box, fdoors, elsewhere, f, measure, highlight):
             ops.append(("pulse", ROOM, sx, sy, sw_w, sw_h))
             ops.append(("ring_rect", WALL, sx, sy, sw_w, sw_h, 2))
             ops.append(("text", TEXT, p, fs(13), tx, label_y(fs(13)), False))
+        elif kind == "skull":
+            label, dead = p
+            ops.extend(skull_shapes(sx + sw_w // 2, y + rh // 2, max(2, sw_h // 6), dead))
+            ops.append(("text", DIM if dead else TEXT, _fit(label, fs(13), maxw, measure), fs(13),
+                        tx, label_y(fs(13)), False))
         elif kind == "open":
             ops.append(("rect", ROOM, sx, sy, sw_w, sw_h))
             mid = sy + sw_h // 2 - WALL_PX // 2
@@ -308,6 +352,9 @@ def tooltip_lines(sc: Scene, px: float, py: float):
         others = [n for n in sc.here if n != room]
         lines.append("Jill is here" if not others else
                      f"Jill is here or in the {' / '.join(others)} (one room to the game)")
+    for drawn, boss, dead in sc.skulls:
+        if drawn == room:
+            lines.append(f"Boss Rush: {boss} - {'defeated' if dead else 'still alive'}")
     return lines, None, room, None
 
 

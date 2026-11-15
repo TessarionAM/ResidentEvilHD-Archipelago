@@ -43,11 +43,32 @@ def with_quantity(item: str, qty: Optional[int]) -> str:
     return f"{item} ({qty})" if qty and qty > 1 else item
 
 
-def message_for(args: dict, my_slot: int,
-                item_name: Callable[[int, int], str],
-                player_name: Callable[[int], str],
-                quantity: Callable[[str], Optional[int]]) -> Optional[tuple]:
-    """(kind, text) for a PrintJSON ItemSend/ItemCheat that involves us, else None.
+# Archipelago's own item colours (its text client / Kivy client): progression = plum, useful =
+# slate blue, trap = salmon, anything else = cyan. 2026-11-15 (TessarionAM): the item's name in
+# our on-screen lines uses these; the rest of the line keeps its own colour.
+ITEM_COLOUR = {"progression": "#af99ef", "useful": "#6d8be8", "trap": "#fa8072", "filler": "#00eeee"}
+
+
+def item_colour(flags: Optional[int]) -> str:
+    """NetworkItem flags: 1 = progression, 2 = useful, 4 = trap (Archipelago's order: trap,
+    then progression, then useful)."""
+    flags = flags or 0
+    if flags & 4:
+        return ITEM_COLOUR["trap"]
+    if flags & 1:
+        return ITEM_COLOUR["progression"]
+    if flags & 2:
+        return ITEM_COLOUR["useful"]
+    return ITEM_COLOUR["filler"]
+
+
+def message_parts(args: dict, my_slot: int,
+                  item_name: Callable[[int, int], str],
+                  player_name: Callable[[int], str],
+                  quantity: Callable[[str], Optional[int]]) -> Optional[tuple]:
+    """(kind, [(text, colour or None), ...]) for a PrintJSON ItemSend/ItemCheat that involves us,
+    else None. None as colour = the line's own colour (by kind); the item's name gets
+    item_colour(its flags).
 
     item_name(item_id, receiving_slot), player_name(slot), quantity(item name in OUR game).
     """
@@ -58,17 +79,29 @@ def message_for(args: dict, my_slot: int,
     if net is None or receiving is None:
         return None
     if isinstance(net, dict):
-        item_id, finder = net.get("item"), net.get("player")
+        item_id, finder, flags = net.get("item"), net.get("player"), net.get("flags", 0)
     else:                                   # NetworkItem(item, location, player, flags)
         item_id, finder = net[0], net[2]
+        flags = net[3] if len(net) > 3 else 0
     name = item_name(item_id, receiving)
+    colour = item_colour(flags)
     if receiving == my_slot and finder == my_slot:
-        return "found", f"You found your {with_quantity(name, quantity(name))}."
+        return "found", [("You found your ", None), (with_quantity(name, quantity(name)), colour), (".", None)]
     if finder == my_slot:
-        return "sent", f"You sent {name} to {player_name(receiving)}."
+        return "sent", [("You sent ", None), (name, colour), (f" to {player_name(receiving)}.", None)]
     if receiving == my_slot:
-        return "received", f"{player_name(finder)} sent you {with_quantity(name, quantity(name))}."
+        return "received", [(f"{player_name(finder)} sent you ", None),
+                            (with_quantity(name, quantity(name)), colour), (".", None)]
     return None
+
+
+def message_for(args: dict, my_slot: int,
+                item_name: Callable[[int, int], str],
+                player_name: Callable[[int], str],
+                quantity: Callable[[str], Optional[int]]) -> Optional[tuple]:
+    """(kind, text): message_parts as one plain string (logs, tests)."""
+    parts = message_parts(args, my_slot, item_name, player_name, quantity)
+    return None if parts is None else (parts[0], "".join(t for t, _c in parts[1]))
 
 
 # ---------- window ----------
@@ -100,7 +133,8 @@ class Overlay:
         self.thread = threading.Thread(target=self._run, name="RE1HD overlay", daemon=True)
         self.thread.start()
 
-    def show(self, text: str, kind: str = "info") -> None:
+    def show(self, text, kind: str = "info") -> None:
+        """text: a string, or [(text, colour or None), ...] (message_parts)."""
         if self.enabled and not self.failed:
             self.q.put((time.time(), kind, text))
 
@@ -139,6 +173,8 @@ class Overlay:
                 hwnd = root.winfo_id()
             _make_click_through(hwnd)
             lines: list = []
+            import tkinter.font as tkfont
+            measure = tkfont.Font(root=root, family=FONT[0], size=FONT[1], weight=FONT[2]).measure
 
             def screen(steps):
                 """Black full-screen card: fade in, show each step, fade out (all in this thread)."""
@@ -180,8 +216,10 @@ class Overlay:
                                 c.create_text(w // 2, h // 2 + 80, text=action[2], font=SCREEN_SMALL, fill="#9a9a9a")
                         else:
                             top.destroy()
-                    except Exception:
-                        pass
+                    except tk.TclError:
+                        pass                    # the window is already gone
+                    except Exception:           # 2026-11-14 audit: don't hide a broken fun trap
+                        log.warning("Fun trap screen step %s failed", action[0], exc_info=True)
                 for when, action in plan:
                     top.after(int(when * 1000), do, action)
 
@@ -244,10 +282,14 @@ class Overlay:
                 canvas.delete("all")
                 for row, (_, kind, text) in enumerate(lines):
                     y = 8 + row * 38
-                    for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (2, 2)):   # dark outline
-                        canvas.create_text(10 + dx, y + dy, text=text, anchor="nw", font=FONT, fill="#000001")
-                    canvas.create_text(10, y, text=text, anchor="nw", font=FONT,
-                                       fill=TEXT_COLOUR.get(kind, "#ffffff"))
+                    parts = [(text, None)] if isinstance(text, str) else text
+                    x = 10
+                    for part, colour in parts:     # coloured item names (message_parts)
+                        for dx, dy in ((-2, 0), (2, 0), (0, -2), (0, 2), (2, 2)):   # dark outline
+                            canvas.create_text(x + dx, y + dy, text=part, anchor="nw", font=FONT, fill="#000001")
+                        canvas.create_text(x, y, text=part, anchor="nw", font=FONT,
+                                           fill=colour or TEXT_COLOUR.get(kind, "#ffffff"))
+                        x += measure(part)
                 root.attributes("-topmost", True)
                 root.after(100, tick)
 

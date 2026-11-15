@@ -25,13 +25,21 @@ class SecretPassageTests(unittest.TestCase):
 
 
 class LisaPassageTests(unittest.TestCase):
-    def test_needs_the_flamethrower(self):
+    """2026-11-15 (TessarionAM): Barry's cave lift only goes down, so the Broken Flamethrower is
+    always placed below it, before Lisa's door - the area needs nothing more in the logic."""
+
+    def test_area_below_the_lift(self):
         items, _locs = dl.simple_progression()
         have = Counter(i for i in items if i != "Broken Flamethrower")
         rooms, _h, _b = dl.reachable(dl.effective_doors({}), have, True)
-        self.assertIn("Garbage Compactor Room", rooms)
-        for room in ("Winding Underground Passage", "Underground Storage Room", "Lisa's Room"):
-            self.assertNotIn(room, rooms)
+        for room in ("Garbage Compactor Room", "Winding Underground Passage", "Underground Storage Room",
+                     "Lisa's Room"):
+            self.assertIn(room, rooms)
+
+    def test_the_lift_is_one_way(self):
+        lift = [d for d in dl.effective_doors({}) if {d[0], d[1]} == {"Generator Room", "Garbage Compactor Room"}]
+        self.assertEqual(lift, [("Generator Room", "Garbage Compactor Room",
+                                 ("Shaft", "Cylinder", "Hexagonal Crank"), True)])
 
 
 class SprayTests(unittest.TestCase):
@@ -93,14 +101,16 @@ class SprayAndFlamethrowerClientTest(BridgeTest):
         checked = b.tick([])
         self.assertIn("Gallery - Insecticide Spray", checked)
 
-    def test_flamethrower_warning(self):
+    def test_no_flamethrower_warning_any_more(self):
+        """2026-11-15 (TessarionAM): the Broken Flamethrower is always found below the cave lift now,
+        so the old 'carry it' warning is gone."""
         b = self.bridge()
         b.tick([])
         struct.pack_into("<ii", self.game.mem, FLAGS + hv.CURRENT_ROOM_OFFSET, 3, 0x16)   # 0x316
         b.tick([])
         b.room_since -= 2
         b.tick([])
-        self.assertTrue(any("Broken Flamethrower" in (n[0] if isinstance(n, tuple) else n) for n in b.notices))
+        self.assertFalse(any("Broken Flamethrower" in (n[0] if isinstance(n, tuple) else n) for n in b.notices))
 
 
 class StudyDoorTest(unittest.TestCase):

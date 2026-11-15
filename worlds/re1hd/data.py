@@ -34,6 +34,31 @@ marked GUESS until the door scanner confirms them.
 """
 
 START = "Main Hall"
+# random_start_room (2026-11-15): the save rooms a seed can start in (logic room names; the client
+# gets the room number from game_data.ROOM_NUMBERS). The Laboratory's two are left out: its doors
+# depend on power and story events, and Barry / Wesker's Lab scenes weren't tested with a jump.
+# The Mansion Drug Room was dropped after the 2026-11-15 generation runs: with the plain doors it
+# never passes (going out leaves it behind a one-way door), and with door locks / door shuffle the
+# seeds that passed our check then failed Archipelago's own fill (every failure in 480 seeds).
+START_ROOMS_MANSION = ("Dining Room", "East Wing Storeroom")
+# Also left out after checking every save room with the generator's own validation (2026-11-15): the
+# Garbage Compactor Room and Room 003 can't reach the goal even with every item (their way out is a
+# locked door), and the Altar Stairway Passage has too few checks within reach to start a fill.
+# Every start is still validated per seed (World._pick_start_room); a room that fails is skipped.
+START_ROOMS_ALL = START_ROOMS_MANSION + ("Mining Area", "Cabin", "Residence Storeroom")
+# With a random start room, Barry's Lock Pick scene happens when Jill first walks back into the Main
+# Hall (the intro replays) - not proven yet, so the check is treated as missable (locked junk; the
+# real Lock Pick stays in the pool).
+START_ROOM_MISSABLE = frozenset({"Main Hall - Lock Pick (Barry)"})
+# Starts on the far side of the Stone & Metal gate (2026-11-15, TessarionAM's seed: from the
+# Residence he walked Garden Shed -> Roofed Passage, which is free one way, and couldn't get back -
+# the gate is the only way back to the Courtyard, Residence and Caves). TessarionAM (19:15): with
+# these starts the client puts the object in the gate for you from the start (the gate holder,
+# client._gate_tick: the drawn object is a copy, taken away again if picked up, so there are never
+# more than the game's two), so the gate is open both ways and the logic needs nothing there.
+GATE_SIDE_STARTS = frozenset({"Mining Area", "Cabin", "Residence Storeroom"})
+GATE_LINK = ("Garden Shed", "Roofed Passage")
+GATE_ITEM = "Stone & Metal Object"
 GOAL_ROOM = "Garden Shed"   # reaching it = escaping the mansion (goal mansion_escape)
 
 ROOMS = [
@@ -61,6 +86,8 @@ ARMOR = ("Armor Key",)
 ARMOR_SPOT = "Armor Key Spot Used"   # event, see EVENTS
 ELEVATOR_POWER = "Kitchen Elevator Powered"   # event, see EVENTS
 HELMET_SPOT = "Helmet Key Spot Used"   # event: the Plant 42 Room Helmet Key pickup (vanilla spot)
+POOL_DRAINED = "Water Pool Drained"          # event: the Square Crank used in the Water Pool
+BATTERY_LIFT = "Falls Area Lift Powered"     # event: the Battery put in the Falls Area lift
 SHIELD = ("Shield Key",)
 MASKS = ("Mask without eyes", "Mask without a mouth", "Mask without a nose",
          "Mask without eyes, nose, or mouth")
@@ -132,7 +159,13 @@ DOORS = [
     # reached through the Resting Room's own doors.
     ("Secret Passage", "Concrete Passage 1", (), True),
     # --- Goal ---
-    ("Roofed Passage", "Garden Shed", ("Stone & Metal Object",), False),
+    # The gate only takes the Stone & Metal Object from the Roofed Passage side (TessarionAM,
+    # 2026-11-14). Test 07 (17:35): from the Garden Shed the door to the Roofed Passage opens
+    # without it; the way from the Roofed Passage into the Garden Shed needs the gate open. Since
+    # 0.9.25 the client keeps it open once the object has been received (or taken back off the
+    # gate for the Altar), so the rule is simply "have the object".
+    ("Roofed Passage", "Garden Shed", ("Stone & Metal Object",), True),
+    ("Garden Shed", "Roofed Passage", (), True),
 ]
 
 PICKUPS = [
@@ -196,8 +229,9 @@ PICKUPS = [
     ("Researcher's Bedroom", "Researcher's Bedroom - Battery Pack", "Battery Pack", ()),
     ("Tiger Statue Room", "Tiger Statue Room - Shotgun Shells", "Shotgun Shells", ("Blue Gemstone",)),
     # the herbs can be killed with the Herbicide (handle on "Green"), so they're MISSABLE (TessarionAM,
-    # 2026-11-12): no requirement, each check always gives junk
-    *[("Greenhouse", f"Greenhouse - Green Herb {i}", "Green Herb", ()) for i in range(1, 6)],
+    # 2026-11-12): each check always gives junk. 2026-11-15 (TessarionAM): they can't be reached
+    # until the Herbicide has killed the plant, so the tracker only shows them with it.
+    *[("Greenhouse", f"Greenhouse - Green Herb {i}", "Green Herb", ("Herbicide",)) for i in range(1, 6)],
     ("Greenhouse", "Greenhouse - Mask without eyes", "Mask without eyes", ("Herbicide",)),
     # Mirror Corridor / 'Death' Passage
     ("Mirror Corridor", "Mirror Corridor - Golden Arrow", "Golden Arrow", ()),
@@ -207,6 +241,8 @@ PICKUPS = [
     # Outside Balcony (Dog Whistle summons the Cerberus with the Collar - CONFIRMED by TessarionAM)
     # (The 3 Outside Balcony Green Herbs on Evil Resource's list are NOT pickups in this
     # version: using them changed neither the inventory nor any pickup flag - tested 2026-11-10.)
+    # 2026-11-15 (TessarionAM): once Jill has a Collar the whistle can't be used any more, so this
+    # check is missable (MISSABLE: junk) and leaves the tracker when a Collar is received (GONE_WHEN).
     ("Outside Balcony", "Outside Balcony - Collar (Cerberus)", "Collar", ("Dog Whistle",)),
     # Outside Patio
     ("Outside Patio", "Outside Patio - Dagger", "Dagger", ()),
@@ -281,7 +317,10 @@ MEDALS = ("Last Book, vol. 1", "Last Book, vol. 2")       # the books hold the E
 MO_DISKS = ("MO Disk 1", "MO Disk 2", "MO Disk 3")
 # everything the vanilla route needs to reach Lisa's Room / the Main Laboratory (for GUESS locks
 # that may depend on story progress rather than an item)
-REACH_LISA = ("Square Crank", "Battery") + CRESTS + ("Shaft", "Cylinder", "Hexagonal Crank", "Broken Flamethrower")
+# The Broken Flamethrower is always found below Barry's cave lift (FLAMETHROWER_LOCATIONS), so the
+# logic uses an event there instead of the item: generation and our own checks then agree on it.
+FLAMETHROWER_FOUND = "Broken Flamethrower Found"
+REACH_LISA = ("Square Crank", "Battery") + CRESTS + ("Shaft", "Cylinder", "Hexagonal Crank", FLAMETHROWER_FOUND)
 REACH_MAIN_LAB = ("Power Key", "Fuel Capsule") + MO_DISKS
 
 ROOMS += [r for r in ["Tiger Statue Room", "Large Art & Mirror Rooms", "Courtyard Study", "Garden Shed", "Secret Passage", "Elevator Corridor", "Trophy Room", "Library", "Materials Room", "Main Garden", "Heliport", "Zigzag Path", "Underground Statue Room", "Mining Area", "Generator Room", "Enrico Room", "Boulder Passage 1", "Spider Room", "Straight Passage", "Boulder Passage 2", "Small Headstone Area", "Cabin", "Jessica's Tomb", "Garbage Compactor Room", "Winding Underground Passage", "Underground Storage Room", "Lisa's Room", "Residence Entry Corridor", "Room 001", "Room 001 Bathroom", "Residence Storeroom", "Rec Room", "Room 002 Bathroom", "Gallery", "Plant 42 Room", "Aqua Ring Entry", "Aqua Ring Storage", "Control Room", "Aqua Ring Water Tank", "Passage to Heliport", "Lab Item Box Room", "Lab Stairway", "Visual Data Room", "'O' Room", "Operating Room", "Morgue", "Pass Code Corridor", "X-Ray Room B", "X-Ray Room A", "Lounge Room", "Power Maze A", "Power Maze B", "Main Laboratory", "Main Laboratory Entrance"] if r not in ROOMS] + [
@@ -315,7 +354,14 @@ DOORS += [
     ("Garden Shed", "Main Garden", (), False),
     ("Garden Shed", "Muddy Path", (), False),
     ("Main Garden", "Water Pool", (), False),
-    ("Main Garden", "Falls Area", ("Square Crank",), False),      # crank lowers the pool water
+    # Courtyard water (TessarionAM, 2026-11-14 + mapping run 2026-11-10): the Square Crank only works in
+    # the Water Pool (top side): draining it opens the walk across the pool to the lift down to the
+    # Falls Area (game door 301-302). The Battery goes into the lift at the Falls Area end (inventory,
+    # 17:22:29 in 0x302); that lift (300-302) then joins the Falls Area and the Main Garden. So the way
+    # back up from the Falls Area needs the pool drained from the top OR the Battery - never the crank
+    # in hand.
+    ("Water Pool", "Falls Area", (POOL_DRAINED,), False),
+    ("Main Garden", "Falls Area", (BATTERY_LIFT,), False),
     ("Falls Area", "Zigzag Path", (), False),
     ("Muddy Path", "Small Headstone Area", (), False),
     ("Small Headstone Area", "Forest Pathway", (), False),
@@ -346,7 +392,9 @@ DOORS += [
     # --- Caves (Courtyard B1/B2) ---
     # TessarionAM (2026-11-12): the caves need the Battery (the S&M Object, Square Crank and Sword Key
     # are already on the way here). The three crests were a wrong guess.
-    ("Falls Area", "Mining Area", ("Battery",), False),
+    # The ladder down is behind the waterfall, which only stops when the pool is full again: refilled
+    # with the crank at the top, then back down by the Battery lift (mapping run 17:28:25 -> 17:29:12).
+    ("Falls Area", "Mining Area", ("Square Crank", BATTERY_LIFT), False),
     ("Mining Area", "Forked Passage", (), False),
     ("Forked Passage", "Generator Room", (), False),
     ("Generator Room", "Enrico Room", (), False),
@@ -358,13 +406,15 @@ DOORS += [
     ("Spider Room", "Straight Passage", (), False),
     ("Straight Passage", "Boulder Passage 2", (), False),
     ("Boulder Passage 2", "Underground Statue Room", (), False),
-    ("Generator Room", "Garbage Compactor Room", ("Shaft", "Cylinder", "Hexagonal Crank"), False),
-    # Barry goes back up the cave lift the moment Jill enters the passage where Lisa roams, and
-    # the lift's panel breaks: from then on the only way out is Lisa's door, which the Broken
-    # Flamethrower opens (TessarionAM, 2026-11-13). So she must have it before she goes in.
-    ("Garbage Compactor Room", "Winding Underground Passage", ("Broken Flamethrower",), False),
+    # Barry's cave lift only goes down: the game won't let Jill ride it back up (TessarionAM,
+    # 2026-11-15), and the only way out is Lisa's door, which the Broken Flamethrower opens. So the
+    # Broken Flamethrower is always placed down here, before that door (FLAMETHROWER_LOCATIONS,
+    # World.create_items), and handed straight to Jill (DIRECT_ITEMS) - there's no item box below.
+    # With it guaranteed here, Lisa's door needs nothing more in the logic.
+    ("Generator Room", "Garbage Compactor Room", ("Shaft", "Cylinder", "Hexagonal Crank"), True),
+    ("Garbage Compactor Room", "Winding Underground Passage", (), False),
     ("Winding Underground Passage", "Underground Storage Room", (), False),
-    ("Winding Underground Passage", "Lisa's Room", ("Broken Flamethrower",), False),       # GUESS
+    ("Winding Underground Passage", "Lisa's Room", (), False),
     ("Lisa's Room", "Cabin", (), True),
     # --- Altar ---
     # Two Stone & Metal Objects (the 2nd = Stone Ring + Metal Object). GUESS: the passage may
@@ -462,8 +512,9 @@ PICKUPS += [
     ("Small Headstone Area", "Small Headstone Area - Sun Crest", "Sun Crest", ("Wind Crest",)),
     ("Cabin", "Cabin - Square Crank", "Square Crank", ()),
     ("Jessica's Tomb", "Jessica's Tomb - Barry's Magnum", "Barry's Magnum", ()),
-    # the crate it's in is pushed down from the Underground Storage Room, past the Lisa passage
-    ("Garbage Compactor Room", "Garbage Compactor Room - Broken Flamethrower", "Broken Flamethrower", ("Broken Flamethrower",)),
+    # the crate it's in is pushed down from the Underground Storage Room (TessarionAM's 2026-11-15
+    # run: Storage Room 17:33, back in the Compactor Room 17:36, check 17:37)
+    ("Garbage Compactor Room", "Garbage Compactor Room - Broken Flamethrower", "Broken Flamethrower", ()),
     ("Winding Underground Passage", "Winding Underground Passage - Green Herb", "Green Herb", ()),
     ("Winding Underground Passage", "Winding Underground Passage - Red Herb", "Red Herb", ()),
     ("Underground Storage Room", "Underground Storage Room - Handgun Magazine", "Handgun Magazine", ()),
@@ -526,6 +577,11 @@ PICKUPS += [
     ("Power Maze B", "Power Maze B - Battery Pack", "Battery Pack", ()),
     ("Main Laboratory", "Main Laboratory - Master Key", "Master Key", ()),
     ("Main Laboratory Entrance", "Main Laboratory Entrance - Shotgun Shells", "Shotgun Shells", ()),
+    # --- appended after the public release (IDs above never move) ---
+    # 2026-11-14: Cell Shotgun Shells, flag +0x2FB bit 4. The client noted "item 18 arrived with new
+    # bit +0x2fb bit 4" twice, both times with Jill in the Cell (0x512): 2026-11-13 13:51:37 and
+    # 2026-11-14 00:53:05 (TessarionAM's logs).
+    ("Cell", "Cell - Shotgun Shells", "Shotgun Shells", ()),
 ]
 
 # Rooms with an ITEM BOX (2026-11-10, from where TessarionAM took items out of the box in his run,
@@ -542,6 +598,11 @@ EVENTS = [
     ("'Death' Passage", ARMOR_SPOT, ("Collar",)),   # same as the 'Death' Passage - Armor Key pickup
     ("Concrete Passage 2", ELEVATOR_POWER, ()),       # the power switch for the Kitchen Elevator
     ("Plant 42 Room", HELMET_SPOT, ()),               # same as the Plant 42 Room - Helmet Key pickup
+    # 2026-11-14 (TessarionAM: these only work from one side; flags from the mapping run 2026-11-10):
+    ("Water Pool", POOL_DRAINED, ("Square Crank",)),                # +0x221.4
+    ("Falls Area", BATTERY_LIFT, ("Battery",)),                     # +0x22A.6
+    # 2026-11-15: the Broken Flamethrower is always placed below the cave lift, before Lisa's door
+    ("Garbage Compactor Room", FLAMETHROWER_FOUND, ()),
 ]
 EVENT_NAMES = frozenset(name for _, name, _ in EVENTS)
 
@@ -557,8 +618,20 @@ MISSABLE = {
     # using an Insecticide Spray (e.g. one received from the multiworld) removes the Gallery's own
     # spray from the game (TessarionAM, 2026-11-13); the client sends this check when a spray is used
     "Gallery - Insecticide Spray": "Insecticide Spray",
+    "Outside Balcony - Collar (Cerberus)": "Collar",       # the whistle stops working once you have one
 }
-# Richard, Attic (saved him + Yawn); Brad, Heliport (only if the Tyrant comes, i.e. Barry alive)
+# Checks that can't be done any more once an item has been received: the tracker drops them.
+GONE_WHEN = {"Outside Balcony - Collar (Cerberus)": "Collar"}
+# The Broken Flamethrower is always placed at one of these (the area below Barry's cave lift, before
+# Lisa's door - see DOORS). Picked at random among those that are checks in the seed.
+FLAMETHROWER_LOCATIONS = ("Garbage Compactor Room - Broken Flamethrower",
+                          "Winding Underground Passage - Green Herb", "Winding Underground Passage - Red Herb",
+                          "Underground Storage Room - Handgun Magazine", "Underground Storage Room - Magnum Rounds",
+                          "Underground Storage Room - Battery Pack")
+# Bonus weapons that are never a location (TessarionAM, 2026-11-14): the Attic Assault Shotgun
+# doesn't spawn for Jill at all, and Brad only drops the Heliport Rocket Launcher if both Barry and
+# Chris were saved, which players can't be made to do. Both are delivered to the item box fine
+# (logs 2026-11-12/13/14), so they stay in the pool as found items.
 MISSABLE_POOL_ITEMS = ("Assault Shotgun", "Rocket Launcher")
 # Spot events that happen when a pickup is taken from its vanilla spot. The live tracker only
 # counts them once that pickup's check has really been collected (seed test 5, 2026-11-12).
@@ -570,10 +643,26 @@ KEEP_VANILLA = frozenset({"Mansion Drug Room - Serum"})
 
 # Items the client hands to Jill directly, not via the item box (the Lock Pick goes to her hidden
 # slot, the Book of Curses to her inventory - every item box needs the Sword Key to reach).
-DIRECT_ITEMS = frozenset({"Lock Pick", "Book of Curses"})
+DIRECT_ITEMS = frozenset({"Lock Pick", "Book of Curses", "Broken Flamethrower"})
 
 FINAL_ROOM = "Heliport"
 FINAL_REQUIRES = ("Signal Rockets", "Fuse Unit")
+
+# BOSS RUSH (TessarionAM, 2026-11-14): the Signal Rockets are locked behind these seven bosses. The
+# client sends BOSS_RUSH_LOCATION once every kill bit is on; that location holds the Signal Rockets.
+# (event name, region, kill bit in the per-enemy kill table, extra requirements)
+# Kill bits: mapping run 2026-11-10, ONE sample each (test plan 04 confirms): EXPERIMENTAL.
+BOSSES = [
+    ("Crypt Crimson Head Defeated", "Crypt", (0x270, 6), MASKS),      # it wakes when the masks are in
+    ("Plant 42 Defeated", "Plant 42 Room", (0x270, 3), ()),
+    ("Yawn Defeated", "Library", (0x2A5, 0), ()),
+    ("Black Tiger Defeated", "Spider Room", (0x2AD, 0), ()),
+    ("Neptune Defeated", "Aqua Ring Water Tank", (0x2AC, 0), ()),    # confirmed by TessarionAM 2026-11-15
+    ("Lisa Trevor Defeated", "Jessica's Tomb", (0x272, 0), ()),      # the Altar fight
+    ("Tyrant Defeated", "Main Laboratory", (0x2AE, 1), ()),
+]
+BOSS_RUSH_LOCATION = "Boss Rush - All Bosses Defeated"
+BOSS_RUSH_ITEM = "Signal Rockets"
 
 
 # ---------------------------------------------------------------------------

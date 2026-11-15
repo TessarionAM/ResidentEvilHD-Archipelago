@@ -343,6 +343,13 @@ class WrongDoor:
         if self.ready(conn, pid) or (self.warm_thread and self.warm_thread.is_alive()
                                       and self.warm_pid == pid):
             return
+        if self.game and self.game_pid == pid and not _alive(conn, self.game, GAME_VTABLE):
+            # the game object we had is gone (a death or a loaded save frees it - 2026-11-14,
+            # 00:56): look for the new one now, not after RESCAN_SECONDS
+            self.stale_games.add(self.game)
+            self.game = 0
+            self.next_scan = 0.0
+            log.info("Doors: the game's door data moved (save loaded?) - looking for it again.")
         if not hasattr(conn, "readable_regions") or time.time() < self.next_scan:
             return
         self.next_scan = time.time() + RESCAN_SECONDS
@@ -364,8 +371,13 @@ class WrongDoor:
 
     def _scan(self, conn, pid):
         t0 = time.time()
-        keep_game = self.game if self.game and self.game_pid == pid else 0
-        keep_info = self.info if self.info and self.info_pid == pid else {}
+        # keep only what is still there: 2026-11-14 (TessarionAM's log, 00:56) a death + reload
+        # freed the game object; v0.9.15 kept its old address here, so every rescan "found" the
+        # dead object again and shortcuts / Wrong Door / door randomiser stopped for good.
+        keep_game = self.game if self.game and self.game_pid == pid and _alive(conn, self.game, GAME_VTABLE) else 0
+        if self.game and not keep_game:
+            self.stale_games.add(self.game)
+        keep_info = self.info if self.info and self.info_pid == pid and _info_alive(conn, self.info) else {}
         try:
             game = keep_game or _find_game(conn, self.room_hint, self.stale_games)
             info = (keep_info or _find_info(conn)) if game else {}
@@ -519,6 +531,23 @@ class WrongDoor:
             except Exception:
                 keep.append([e, orig, saved_pid, target])
         self.s["info"] = keep
+
+
+def _alive(conn, addr: int, vtable: int) -> bool:
+    try:
+        return struct.unpack("<I", conn.read_bytes(addr, 4))[0] == vtable
+    except Exception:
+        return False
+
+
+def _info_alive(conn, info) -> bool:
+    """The door animation table we found is still there (its entries still read "do..." at +8,
+    the same test _find_info uses)."""
+    entries = [e for es in info.values() for e in es][:4]
+    try:
+        return bool(entries) and all(conn.read_bytes(e + 8, 2) == b"do" for e in entries)
+    except Exception:
+        return False
 
 
 def _find_game(conn, room: Optional[int] = None, stale: Set[int] = frozenset()) -> int:

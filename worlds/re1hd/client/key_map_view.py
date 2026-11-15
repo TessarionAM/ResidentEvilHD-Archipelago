@@ -13,6 +13,7 @@ from kivy.core.window import Window
 from kivy.graphics import Color, Ellipse, InstructionGroup, Line, Rectangle
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 
@@ -130,15 +131,19 @@ class KeyMapView(BoxLayout):
             top.add_widget(w)
         self.add_widget(top)
         # Shortcuts (TessarionAM, 2026-11-13): unlocked by visiting the room; key_map_shortcuts in the YAML
-        from .shortcuts import ORDER
-        self.shortcut_row = BoxLayout(size_hint_y=None, height=34)
+        # 2026-11-14: one per typewriter room (11), so two rows of buttons with short labels
+        from .shortcuts import LABELS, ORDER
+        self.shortcut_row = BoxLayout(size_hint_y=None, height=60)
         self.shortcut_buttons = {}
         self.shortcut_row.add_widget(Label(text="Shortcuts:", size_hint_x=None, width=90))
+        grid = GridLayout(cols=(len(ORDER) + 1) // 2, spacing=2)
+        self.shortcut_row.add_widget(grid)
+        self.shortcut_labels = {n: LABELS.get(n, n) for n in ORDER}
         for name in ORDER:
-            b = Button(text=name, disabled=True)
+            b = Button(text=self.shortcut_labels[name], disabled=True, font_size="12sp")
             b.bind(on_release=lambda _b, n=name: self.on_shortcut and self.on_shortcut(n))
             self.shortcut_buttons[name] = b
-            self.shortcut_row.add_widget(b)
+            grid.add_widget(b)
         self._shortcuts_shown = False
         self.canvas_w = _MapCanvas(self)
         self.add_widget(self.canvas_w)
@@ -171,9 +176,9 @@ class KeyMapView(BoxLayout):
             self.remove_widget(self.shortcut_row)
             self._shortcuts_shown = False
         for name, b in self.shortcut_buttons.items():
+            label = self.shortcut_labels[name]
             b.disabled = name not in unlocked
-            b.text = (f"{name} (armed)" if name == armed else
-                      name if name in unlocked else f"{name} (visit first)")
+            b.text = f"> {label} <" if name == armed else label      # greyed out until visited
 
     def pick(self, i):
         self.floor, self.user_picked, self.highlight = i, True, None
@@ -187,10 +192,11 @@ class KeyMapView(BoxLayout):
         self.redraw()
 
     def update(self, received, active, checked, box_gate, current_room, unlocked=(), number=None, pos=None,
-               discovered=None):
+               discovered=None, bosses=None):
         """current_room: our name for the game's room; number + pos: the game's room number and
         Jill's x, y, z - they say which map room (and floor) she's really in (map_position)."""
         self.state = map_state(received, active, checked, box_gate, unlocked, discovered)
+        self.bosses = dict(bosses) if bosses is not None else None      # Boss Rush skulls
         now = time.monotonic()
         if number != self._number:
             # v0.9.9 (TessarionAM): for a moment after a door the game still holds Jill's position from
@@ -212,6 +218,10 @@ class KeyMapView(BoxLayout):
                 where = None
         else:
             where = map_position.locate(number, pos, prev)
+        if where is None and number is not None and self.here and self.jill_floor >= 0:
+            # a room the map doesn't draw (the Kitchen Elevator, 0x200): Jill stays shown where she
+            # got in, instead of vanishing from the map (2026-11-15)
+            where = map_position.Where(self.jill_floor, list(self.here))
         here = where.rooms if where else []
         jill_floor = where.floor if where else (floor_of(current_room) if current_room else -1)
         if jill_floor != self.jill_floor and jill_floor >= 0:
@@ -230,13 +240,15 @@ class KeyMapView(BoxLayout):
         c = self.canvas_w
         self.title.text = f"[b]{FLOORS[self.floor][0]}[/b]  ({self.floor + 1}/{len(FLOORS)})"
         here = self.here if self.floor == self.jill_floor else []
+        bosses = getattr(self, "bosses", None)
         sig = (self.floor, repr(self.state), tuple(c.size), tuple(c.pos), self.current_room, tuple(here),
-               self.highlight)
+               self.highlight, repr(bosses))
         if sig == self._drawn and not force:
             return
         self._drawn = sig
         self.scene = map_render.build(self.floor, self.state, c.width, c.height, self.current_room,
-                                      measure, self.highlight, here=here if self.here else None)
+                                      measure, self.highlight, here=here if self.here else None,
+                                      bosses=bosses)
         c.base.clear()
         self._pulses = []
         draw(c.base, self.scene.ops, c.x, c.y, c.height, self._pulses)

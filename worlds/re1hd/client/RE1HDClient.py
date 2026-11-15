@@ -25,6 +25,7 @@ Commands (type in the client):
   /tracker on|off    show/hide the Tracker and Key Map tabs
   /inlogic (/stuck)  checks you can reach right now with the items you have
   /autosave          save to the autosave slot now (in a save room; option autosave)
+  /autoload [on|off] after a death, load the autosave by itself (needs autosave); no word = status
   /escaped           backup: tell the server you finished (normally automatic)
 """
 
@@ -38,12 +39,14 @@ from NetUtils import ClientStatus
 
 from ..game_data import DELIVERY_QUANTITY, GOAL_ROOM_NUMBER, ROOM_NUMBERS
 ROOM_NAME_OF = {nb: name for name, nb in ROOM_NUMBERS.items()}
+# Game rooms that aren't rooms in the world's logic (2026-11-15: the Key Map showed no name there).
+ROOM_NAME_OF.setdefault(0x200, "Kitchen Elevator")
 from ..items import item_table
 from ..locations import all_location_ids
 from .game_bridge import EFFECT_ITEMS, FUN_TRAPS, WRONG_DOOR, EndingWatcher, GameBridge, Incoming, StateFile
 from .held_traps import HeldTraps
 from .hd_delivery import Journal
-from .overlay import Overlay, message_for
+from .overlay import Overlay, message_for, message_parts
 
 GAME = "Resident Evil HD Remaster"
 ITEM_ID_TO_GAME_ID = {data.code: data.game_id for data in item_table.values()}
@@ -72,6 +75,7 @@ class RE1HDCommandProcessor(ClientCommandProcessor):
             logger.info(f"Door skip: {'on' if b.door_skip else 'off'}   Borderless: {'on' if b.borderless else 'off'}   "
                         f"Autosave: {'slot ' + str(b.autosave_slot + 1) if b.autosave_slot is not None else 'off'}"
                         f"   Game-thread routine: {'ready' if b.autosaver else 'not installed'}")
+            logger.info(b.autoload_status())
 
     def _cmd_delivered(self):
         """List received items and whether they've been delivered."""
@@ -135,17 +139,17 @@ class RE1HDCommandProcessor(ClientCommandProcessor):
         logger.info(b.sort_box("by command"))
 
     def _cmd_shortcut(self, *words: str):
-        """Key Map shortcut: /shortcut main hall | garden shed | lab entrance. The next door Jill
-        goes through takes her there (once she has visited it). The same again cancels it."""
+        """Key Map shortcut to a typewriter room: /shortcut <room>, e.g. /shortcut dining room. The
+        next door Jill goes through takes her there (once she has visited it). The same again cancels it."""
         b = self.ctx.bridge
         if b is None:
             logger.info("Connect first.")
             return
-        from .shortcuts import SHORTCUTS
+        from .shortcuts import LABELS, SHORTCUTS
         wanted = " ".join(words).strip().lower()
-        name = next((n for n in SHORTCUTS if n.lower() == wanted), None)
+        name = next((n for n in SHORTCUTS if wanted in (n.lower(), LABELS.get(n, n).lower())), None)
         if name is None:
-            logger.info("Use /shortcut " + " | ".join(n.lower() for n in SHORTCUTS))
+            logger.info("Use /shortcut <room>: " + ", ".join(n.lower() for n in SHORTCUTS))
             return
         logger.info(b.request_shortcut(name))
 
@@ -185,6 +189,25 @@ class RE1HDCommandProcessor(ClientCommandProcessor):
             return
         self.ctx.bridge.adopt_save = True
         logger.info("OK - the loaded save will be treated as this seed's. Its pickups count as checks.")
+
+    def _cmd_bosses(self):
+        """Boss Rush: which bosses are dead (read from the game)."""
+        bridge = getattr(self.ctx, "bridge", None)
+        if bridge is None or not bridge.boss_rush:
+            logger.info("Boss Rush isn't on in this seed.")
+            return
+        if not bridge.bosses_dead:
+            logger.info("Boss Rush: load your game first.")
+            return
+        for line in bridge.bosses_status():
+            logger.info("  " + line)
+
+    def _cmd_unstick(self):
+        """Stuck after loading a save (camera fixed, no inventory, "Close the menu first")? Try this."""
+        if self.ctx.bridge is None:
+            logger.info("Connect first.")
+            return
+        logger.info(self.ctx.bridge.unstick())
 
     def _cmd_boxdebug(self, setting: str = ""):
         """Item box research log in the client log: /boxdebug on|off (off by default)."""
@@ -250,11 +273,7 @@ class RE1HDCommandProcessor(ClientCommandProcessor):
             logger.info("Connect to the server first.")
             return
         from ..logic_tracker import in_logic
-        names = {v: k for k, v in LOCATION_NAME_TO_ID.items()}
-        checked = {names[i] for i in ctx.checked_locations if i in names}
-        active = checked | {names[i] for i in ctx.missing_locations if i in names}
-        received = [ctx.item_names.lookup_in_game(n.item) for n in ctx.items_received]
-        box_gate = ctx.bridge is None or ctx.bridge.destination == 0
+        received, active, checked, box_gate = ctx.tracker_inputs()
         found = in_logic(received, active, checked, box_gate)
         if not found:
             logger.info("Nothing in logic right now that you haven't checked. If you're stuck, "
@@ -276,6 +295,17 @@ class RE1HDCommandProcessor(ClientCommandProcessor):
                         "Set the game to Windowed mode first.")
             return
         logger.info(ctx.bridge.set_borderless(setting.lower() == "on"))
+
+    def _cmd_autoload(self, setting: str = ""):
+        """After a death, load the autosave by itself: /autoload on | off (no word = show the setting)."""
+        ctx = self.ctx
+        if ctx.bridge is None:
+            logger.info("Connect first.")
+            return
+        if setting.lower() in ("on", "off"):
+            logger.info(ctx.bridge.set_autoload(setting.lower() == "on"))
+        else:
+            logger.info(ctx.bridge.autoload_status())
 
     def _cmd_autosave(self):
         """Save to your autosave slot now (you must be in a save room)."""
@@ -338,10 +368,10 @@ class RE1HDContext(CommonContext):
         try:
             if self.slot is None:
                 return
-            msg = message_for(args, self.slot,
-                              lambda item, slot: self.item_names.lookup_in_slot(item, slot),
-                              lambda slot: self.player_names.get(slot, f"player {slot}"),
-                              item_quantity)
+            msg = message_parts(args, self.slot,
+                                lambda item, slot: self.item_names.lookup_in_slot(item, slot),
+                                lambda slot: self.player_names.get(slot, f"player {slot}"),
+                                item_quantity)
             if msg:
                 self.overlay.show(msg[1], msg[0])
         except Exception:
@@ -382,6 +412,19 @@ class RE1HDContext(CommonContext):
             self.bridge.destination = args.get("slot_data", {}).get("received_item_destination", 0)
             sd = args.get("slot_data", {})
             self.bridge.random_start = bool(sd.get("random_starting_inventory", 0))
+            self.bridge.boss_rush = bool(sd.get("boss_rush", 0))
+            self.bridge.start_room = int(sd.get("start_room", 0) or 0)
+            self.bridge.start_room_name = sd.get("start_room_name", "") or ""
+            from .. import logic_tracker as _lt
+            from ..data import START as _START
+            _lt.ORIGIN = self.bridge.start_room_name if self.bridge.start_room else _START
+            self.bridge.gate_open = bool(sd.get("gate_open", 0))
+            if self.bridge.start_room:
+                logger.info(f"Random start room (EXPERIMENTAL): {self.bridge.start_room_name}. On a new game "
+                            "the client moves Jill there about ten seconds in.")
+            if self.bridge.boss_rush:
+                logger.info("Boss Rush (EXPERIMENTAL): the Signal Rockets come once all seven bosses are "
+                            "dead. /bosses shows which are left.")
             self.bridge.room_entries_on = bool(sd.get("first_room_entries", 0))
             # door lock randomiser (0.9.0): the client writes the locks, the tracker / Key Map show them
             self.bridge.set_door_locks(sd.get("door_locks") or {}, sd.get("key_uses") or {})
@@ -407,6 +450,9 @@ class RE1HDContext(CommonContext):
             if sd.get("autosave"):
                 self.bridge.autosave_slot = int(sd.get("autosave_slot", 8)) - 1
                 logger.info(f"Autosave is on: walking into a save room saves to slot {sd.get('autosave_slot', 8)}.")
+            choice = self.bridge.state.autoload_choice
+            self.bridge.autoload = bool(sd.get("autoload_after_death")) if choice is None else choice
+            logger.info(self.bridge.autoload_status())     # always said, on or off (2026-11-15)
             if sd.get("death_link"):
                 Utils.async_start(self.update_death_link(True))
                 logger.info("Death Link is on.")
@@ -431,7 +477,9 @@ class RE1HDContext(CommonContext):
         active = checked | {names[i] for i in self.missing_locations if i in names}
         received = [self.item_names.lookup_in_game(n.item) for n in self.items_received]
         box_gate = self.bridge is None or self.bridge.destination == 0
-        return received, active, checked, box_gate
+        # checks the game won't let you do any more once you hold an item (data.GONE_WHEN)
+        from ..tracker import drop_gone
+        return received, drop_gone(active, checked, received), checked, box_gate
 
     def make_gui(self):
         ui = super().make_gui()
@@ -492,18 +540,21 @@ class RE1HDContext(CommonContext):
                 try:
                     from ..tracker import tracker_text
                     received, active, checked, box_gate = ctx.tracker_inputs()
-                    self.tracker_labels[0].text = tracker_text(received, active, checked, box_gate)
+                    b = ctx.bridge
+                    bosses = b.bosses_dead if b is not None and b.boss_rush else None
+                    self.tracker_labels[0].text = tracker_text(received, active, checked, box_gate, bosses)
                     if getattr(self, "key_map", None) is not None:
                         number = ctx.bridge.current_room if ctx.bridge is not None else None
                         unlocked = ctx.bridge.unlocked_flags if ctx.bridge is not None else frozenset()
                         pos = ctx.bridge.jill_pos if ctx.bridge is not None else None
                         found = ctx.bridge.door_shuffler.s.get("discovered", {}) if ctx.bridge is not None else {}
                         self.key_map.update(received, active, checked, box_gate, ROOM_NAME_OF.get(number),
-                                            unlocked, number, pos, found)
+                                            unlocked, number, pos, found, bosses)
                         b = ctx.bridge
                         self.key_map.set_shortcuts(bool(b and b.shortcuts_on),
                                                    b.shortcuts_unlocked if b else frozenset(),
-                                                   b.shortcut.target_name if b else None)
+                                                   (b.shortcut.target_name or (b.shortcut_jump[0] if b.shortcut_jump else None))
+                                                   if b else None)
                 except Exception:
                     logger.debug("Tracker refresh failed", exc_info=True)
 

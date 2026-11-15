@@ -63,23 +63,52 @@ def pulse_levels(seconds: float = 5.0, beats: int = 5, step: float = 0.05):
     return [int(255 * (0.5 - 0.5 * math.cos(2 * math.pi * beats * i / n))) for i in range(n)] + [0]
 
 
+def _prototypes(ctypes, wintypes, user32, gdi32):
+    """Declare every call's argument and result types. 2026-11-14 (TessarionAM's log): without them
+    64-bit Python passed the bitmap handle as a 32-bit int - "SelectObject ... OverflowError: int too
+    long to convert" - and the flash never showed. Handles must travel as pointers."""
+    H = wintypes.HANDLE
+    user32.CreateWindowExW.restype = wintypes.HWND
+    user32.CreateWindowExW.argtypes = [wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
+                                       ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
+                                       wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, wintypes.LPVOID]
+    user32.GetSystemMetrics.restype, user32.GetSystemMetrics.argtypes = ctypes.c_int, [ctypes.c_int]
+    user32.GetDC.restype, user32.GetDC.argtypes = wintypes.HDC, [wintypes.HWND]
+    user32.ReleaseDC.restype, user32.ReleaseDC.argtypes = ctypes.c_int, [wintypes.HWND, wintypes.HDC]
+    user32.ShowWindow.restype, user32.ShowWindow.argtypes = wintypes.BOOL, [wintypes.HWND, ctypes.c_int]
+    user32.DestroyWindow.restype, user32.DestroyWindow.argtypes = wintypes.BOOL, [wintypes.HWND]
+    user32.UpdateLayeredWindow.restype = wintypes.BOOL
+    user32.UpdateLayeredWindow.argtypes = [wintypes.HWND, wintypes.HDC, ctypes.c_void_p, ctypes.c_void_p,
+                                           wintypes.HDC, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p,
+                                           wintypes.DWORD]
+    user32.PeekMessageW.restype = wintypes.BOOL
+    user32.PeekMessageW.argtypes = [ctypes.c_void_p, wintypes.HWND, wintypes.UINT, wintypes.UINT, wintypes.UINT]
+    user32.TranslateMessage.restype, user32.TranslateMessage.argtypes = wintypes.BOOL, [ctypes.c_void_p]
+    user32.DispatchMessageW.restype, user32.DispatchMessageW.argtypes = ctypes.c_ssize_t, [ctypes.c_void_p]
+    gdi32.CreateCompatibleDC.restype, gdi32.CreateCompatibleDC.argtypes = wintypes.HDC, [wintypes.HDC]
+    gdi32.CreateDIBSection.restype = wintypes.HBITMAP
+    gdi32.CreateDIBSection.argtypes = [wintypes.HDC, ctypes.c_void_p, wintypes.UINT,
+                                       ctypes.POINTER(ctypes.c_void_p), H, wintypes.DWORD]
+    gdi32.SelectObject.restype, gdi32.SelectObject.argtypes = H, [wintypes.HDC, H]
+    gdi32.DeleteObject.restype, gdi32.DeleteObject.argtypes = wintypes.BOOL, [H]
+    gdi32.DeleteDC.restype, gdi32.DeleteDC.argtypes = wintypes.BOOL, [wintypes.HDC]
+
+
 def danger_flash(seconds: float = 5.0) -> bool:
     """Show the pulsing glow over the whole primary screen (background thread)."""
     try:
         import ctypes
         from ctypes import wintypes
-        user32, gdi32 = ctypes.windll.user32, ctypes.windll.gdi32
+        # Private library objects: the prototypes below don't leak into the rest of the client.
+        user32, gdi32 = ctypes.WinDLL("user32"), ctypes.WinDLL("gdi32")
     except Exception:
         return False
+    _prototypes(ctypes, wintypes, user32, gdi32)
 
     def run():
         try:
             w, h = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
             WS_EX = 0x80000 | 0x20 | 0x8 | 0x80 | 0x8000000      # LAYERED|TRANSPARENT|TOPMOST|TOOLWINDOW|NOACTIVATE
-            user32.CreateWindowExW.restype = wintypes.HWND
-            user32.CreateWindowExW.argtypes = [wintypes.DWORD, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.DWORD,
-                                               ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int,
-                                               wintypes.HWND, wintypes.HMENU, wintypes.HINSTANCE, wintypes.LPVOID]
             hwnd = user32.CreateWindowExW(WS_EX, "STATIC", "RE1HD danger", 0x80000000, 0, 0, w, h,
                                           None, None, None, None)                      # WS_POPUP
             if not hwnd:
@@ -100,10 +129,9 @@ def danger_flash(seconds: float = 5.0) -> bool:
             screen = user32.GetDC(None)
             mem = gdi32.CreateCompatibleDC(screen)
             bits = ctypes.c_void_p()
-            gdi32.CreateDIBSection.restype = wintypes.HBITMAP
-            gdi32.CreateDIBSection.argtypes = [wintypes.HDC, ctypes.c_void_p, wintypes.UINT,
-                                               ctypes.POINTER(ctypes.c_void_p), wintypes.HANDLE, wintypes.DWORD]
             dib = gdi32.CreateDIBSection(mem, ctypes.byref(bmi), 0, ctypes.byref(bits), None, 0)
+            if not dib or not bits.value:
+                raise OSError("CreateDIBSection failed")
             old = gdi32.SelectObject(mem, dib)
             stride = w * 4
             for y, line in enumerate(vignette_rows(w, h)):
@@ -127,7 +155,7 @@ def danger_flash(seconds: float = 5.0) -> bool:
             gdi32.DeleteDC(mem)
             user32.ReleaseDC(None, screen)
         except Exception:
-            log.debug("Danger flash failed", exc_info=True)
+            log.warning("Danger flash failed", exc_info=True)
 
     threading.Thread(target=run, name="RE1HD danger flash", daemon=True).start()
     return True

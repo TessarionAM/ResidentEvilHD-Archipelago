@@ -769,10 +769,16 @@ class SeedTagTests(BridgeTest):
         b = self.tagged_bridge()
         self.assertIsNone(b.tick([]))
 
-    def test_older_clients_save_of_this_seed_is_adopted(self):
+    def test_untagged_save_with_a_delivery_record_is_foreign(self):
+        """2026-11-14 (TessarionAM): a save from an earlier seed (no tag, but a delivery record of
+        124) was taken as this seed's and sent its 30 old pickups as checks."""
         self.game.flag(next(iter(DETECTED_PICKUPS)))
-        self.game.set_box(255, 0, 3)                         # our delivery record, no tag yet
+        self.game.set_box(255, 0, 124)                       # a record, but no tag
         b = self.tagged_bridge()
+        self.assertIsNone(b.tick([]))                        # no checks sent
+        self.assertEqual(self.game.box(254), (0, 0))         # not tagged
+        self.assertTrue(any("isn't from this seed" in n for n in b.notices))
+        b.adopt_save = True                                  # /adopt still works
         self.assertIsNotNone(b.tick([]))
         self.assertEqual(self.game.box(254), (0, 12345))
 
@@ -976,6 +982,9 @@ class FakeSaver:
     def poll(self):
         return self.result if self.flag_done else None
 
+    def waiting_for_control(self):
+        return False
+
     def cancel(self):
         pass
 
@@ -1140,7 +1149,8 @@ class CaveCodeTests(unittest.TestCase):
         calls = [struct.unpack("<i", code[i + 1:i + 5])[0] + base + BOX_STUB + i + 5
                  for i in range(len(code) - 4) if code[i] == 0xE8]
         calls = [c for c in calls if 0x400000 <= c < 0x1000000]          # real calls into the game only
-        self.assertEqual(calls, [a["set_state_bit"], a["open_menu"]])
+        # v9: the autosave start (SaveToSlot) comes first, then the item box's two calls
+        self.assertEqual(calls, [a["save_to_slot"], a["set_state_bit"], a["open_menu"]])
         self.assertIn(b"\x6A\x01\x6A\x00\x6A\x00\x6A\x00\x6A\x00\x6A\x05", code)   # OpenMenu(5,0,0,0,0,1)
         self.assertIn(b"\x8B\x0D" + struct.pack("<I", a["menu_ptr"]), code)
         self.assertIn(b"\xC2\x04\x00", code)                                             # ret 4 like the scan
@@ -1344,11 +1354,19 @@ class HeldWeaponTests(BridgeTest):
 
     def test_stuck_pose_with_no_weapon_is_fixed_once_per_run(self):
         b = self.setup_game(held=0)
+        b.swapped_this_run = True                        # straight after the random start swap
         self.run_steps(b)
         n = len(FakeSaver.last.calls)
         b.next_drop_try = 0
         b.tick([])
         self.assertEqual(len(FakeSaver.last.calls), n)
+
+    def test_nothing_to_fix_on_a_save_loaded_mid_game(self):
+        # 2026-11-15: Jill T-posed for a second when the client connected to a mid-game save
+        b = self.setup_game(held=0)                      # nothing held, no swap in this run
+        b.tick([])
+        b.tick([])
+        self.assertFalse(getattr(FakeSaver.last, "calls", []))
 
     def test_nothing_happens_while_the_menu_is_open(self):
         b = self.setup_game()
@@ -1376,11 +1394,49 @@ class HeldWeaponTests(BridgeTest):
         addrs = a.ADDR["hd_6699874012183562949"]
         stub = a.box_stub_code(0x10000000, addrs)
         flag = b"\x83\x3D" + struct.pack("<I", 0x10000000 + a.D_CALL_FLAG)
-        self.assertTrue(stub.startswith(flag + bytes([a.IN_CONTROL])))
+        self.assertIn(flag + bytes([a.IN_CONTROL]), stub)
         self.assertNotIn(flag + bytes([a.IN_CONTROL]), a.cave_code(0x10000000, addrs))
         store = b"\xA3" + struct.pack("<I", 0x10000000 + a.D_CALL_RESULT)
         self.assertIn(store, stub)
         self.assertIn(store, a.cave_code(0x10000000, addrs))
+
+
+class AutosaveInControlTests(unittest.TestCase):
+    """v9 (2026-11-14): the autosave starts only from the box stub (Jill can move), in place of
+    that frame's trigger scan, and only when no save runs and storage is free."""
+
+    def test_stub_starts_the_save_first_and_skips_the_scan_that_frame(self):
+        from ..client import autosave as a
+        addrs = a.ADDR["hd_6699874012183562949"]
+        base = 0x10000000
+        stub = a.box_stub_code(base, addrs)
+        wait = b"\x83\x3D" + struct.pack("<I", base + a.D_FLAG) + bytes([a.WAIT_CONTROL])
+        self.assertTrue(stub.startswith(wait))
+        # flag -> RUNNING before the first SaveToSlot, so the late update carries it on
+        running = b"\xC7\x05" + struct.pack("<I", base + a.D_FLAG) + struct.pack("<I", a.RUNNING)
+        self.assertLess(stub.index(running), stub.index(b"\x6A\x03\xFF\x35"))
+        # the save branch returns (ret 4) before the scan code
+        self.assertLess(stub.index(b"\xC2\x04\x00"), stub.index(b"\x83\x3D" + struct.pack("<I", base + a.D_CALL_FLAG)))
+        # busy checks: save state and storage busy, as in the late-update routine
+        self.assertIn(b"\x83\xBE" + struct.pack("<I", a.SAVE_OBJECT + a.STATE) + b"\x00", stub)
+        self.assertIn(b"\x83\x78" + bytes([a.STORAGE_BUSY]) + b"\x00", stub)
+
+    def test_request_waits_for_control_when_the_box_stub_is_in(self):
+        from ..client import autosave as a
+        s = a.Autosaver.__new__(a.Autosaver)
+        mem = {}
+        s.cave = 0x2000
+        s.box_hook_error = None
+        s.conn = type("C", (), {"write_bytes": lambda _s, addr, data: mem.__setitem__(addr, data),
+                                "read_bytes": lambda _s, addr, n: mem.get(addr, bytes(n))})()
+        s.request(7)
+        self.assertEqual(struct.unpack("<I", mem[0x2000 + a.D_FLAG])[0], a.WAIT_CONTROL)
+        self.assertTrue(s.waiting_for_control())
+        s.cancel()
+        self.assertEqual(struct.unpack("<I", mem[0x2000 + a.D_FLAG])[0], a.IDLE)
+        s.box_hook_error = "not installed"                    # no stub: as before
+        s.request(7)
+        self.assertEqual(struct.unpack("<I", mem[0x2000 + a.D_FLAG])[0], a.REQUESTED)
 
 
 class BoxReminderTests(RoomTests):
@@ -1814,3 +1870,215 @@ class JillPositionReadTest(unittest.TestCase):
         mem = {0x00D59380: struct.pack("<I", 0), 0x00CF3018: struct.pack("<I", 0x11000000),
                0x11000000: holder, 0x2F000000: obj}
         self.assertAlmostEqual(GameBridge._jill_position(self.fake(mem))[0], 1130.3, places=2)
+
+
+class UnstickTests(BridgeTest):
+    """/unstick (2026-11-14): the game still thinks a menu is open after a death / a bad save."""
+
+    def test_stuck_menu_state_is_reset(self):
+        from ..client.game_bridge import MENU_FLAGS, MENU_SCREEN
+        b = self.bridge()
+        b.tick([])
+        struct.pack_into("<ii", self.game.mem, INV + MENU_FLAGS, 0x1020, 0)
+        struct.pack_into("<i", self.game.mem, INV + MENU_SCREEN, 3)
+        self.assertIn("reset", b.unstick())
+        self.assertEqual(struct.unpack_from("<i", self.game.mem, INV + MENU_FLAGS)[0], 0x20)
+        self.assertEqual(struct.unpack_from("<i", self.game.mem, INV + MENU_SCREEN)[0], 0)
+
+    def test_nothing_stuck_writes_nothing(self):
+        b = self.bridge()
+        b.tick([])
+        self.assertIn("No stuck menu", b.unstick())
+
+
+class AutoloadBridgeTests(AutosaveTests):
+    def bridge_with_autoload(self):
+        self.game.module_base, self.game.pid = hv.DEFAULT_IMAGE_BASE, 1234
+        self.game.readable_regions = lambda limit=0: []        # no title screen object yet
+        b = self.bridge_with_autosave()
+        b.autoload = True
+        return b
+
+    def die(self, b):
+        b.tick([])
+        struct.pack_into("<i", self.game.mem, 0x4000 + hv.JILL_HEALTH_OFFSET, 0)
+        b.tick([])
+
+    def test_a_successful_autosave_is_remembered(self):
+        b = self.bridge_with_autoload()
+        self.walk(b, 0x106)
+        self.walk(b, 0x100)
+        type(self).saver_done(b)
+        self.assertTrue(b.state.autosave_made)
+        self.assertTrue(self.bridge().state.autosave_made)     # kept in the state file
+
+    @staticmethod
+    def saver_done(b):
+        FakeSaver.last.flag_done = True
+        b.tick([])
+
+    def test_death_arms_only_after_an_autosave(self):
+        b = self.bridge_with_autoload()
+        self.die(b)
+        self.assertIsNone(b.autoloader)
+        self.assertIn("No autosave yet in this seed - load your save yourself.", b.notices)
+        b.state.autosave_made = True
+        self.put_jill()
+        self.die(b)
+        self.assertTrue(b.autoloader.armed)
+        self.assertEqual(b.autoloader.slot, 7)
+
+    def test_off_by_default(self):
+        b = self.bridge_with_autoload()
+        b.autoload = False
+        b.state.autosave_made = True
+        self.die(b)
+        self.assertIsNone(b.autoloader)
+
+    def test_loading_yourself_disarms_it(self):
+        b = self.bridge_with_autoload()
+        b.state.autosave_made = True
+        self.die(b)
+        self.put_jill()                                        # back in the game, full health
+        b.tick([])
+        self.assertFalse(b.autoloader.armed)
+
+    def test_status_always_says_on_or_off(self):
+        b = self.bridge_with_autoload()
+        b.autoload = False
+        self.assertIn("OFF (from your YAML)", b.autoload_status())
+        b.autosave_slot = None
+        self.assertIn("needs the autosave option", b.autoload_status())
+
+    def test_autoload_command_turns_it_on_and_is_kept_for_the_seed(self):
+        b = self.bridge_with_autoload()
+        b.autoload = False
+        self.assertIn("ON (set with /autoload)", b.set_autoload(True))
+        self.assertTrue(b.autoload)
+        self.assertTrue(self.bridge().state.autoload_choice)       # kept in the state file
+        b.state.autosave_made = True
+        self.die(b)
+        self.assertTrue(b.autoloader.armed)
+        b.set_autoload(False)
+        self.assertFalse(b.autoloader.armed)
+        self.assertIs(self.bridge().state.autoload_choice, False)
+
+    def test_autoload_command_needs_autosave(self):
+        b = self.bridge_with_autoload()
+        b.autosave_slot = None
+        b.autoload = False
+        b.set_autoload(True)
+        self.assertFalse(b.autoload)
+
+
+class FakeJumper:
+    """Stands in for client.room_jump.RoomJumper (no code is written in tests)."""
+    last = None
+
+    def __init__(self, conn, log=None):
+        self.armed, self.installs, self.state = [], 0, 0
+        FakeJumper.last = self
+
+    def install(self):
+        self.installs += 1
+
+    def arm(self, room, came_from=None):
+        self.armed.append(room)
+        self.state = 1
+        return True
+
+    def flag(self):
+        return self.state
+
+    def cancel(self):
+        self.state = 0
+
+
+class StartRoomTests(RoomTests):
+    """random_start_room (2026-11-15): the client moves Jill once, on a new game."""
+    def bridge_with_start(self, room=0x118):
+        self.game.pid = 4321
+        b = self.bridge()
+        b.start_room, b.start_room_name = room, "East Wing Storeroom"
+        b.jumper_factory = FakeJumper
+        self.set_room(0x106)
+        return b
+
+    def test_new_game_arms_then_marks_done_on_arrival(self):
+        b = self.bridge_with_start()
+        b.tick([])
+        self.assertEqual(FakeJumper.last.armed, [0x118])
+        b.tick([])
+        self.assertEqual(FakeJumper.last.armed, [0x118])           # armed once, not every tick
+        FakeJumper.last.state = 2                                    # the stub fired
+        self.set_room(0x118)
+        b.tick([])
+        self.assertTrue(b.state.start_room_done)
+        self.assertTrue(self.bridge().state.start_room_done)       # kept in the state file
+        self.assertIn("Your start room: East Wing Storeroom.", b.notices)
+        self.assertTrue(b.as_armed)                                  # autosaves there next
+        self.set_room(0x106)
+        b.tick([])
+        self.assertEqual(FakeJumper.last.armed, [0x118])           # never again in this run
+
+    def test_off_does_nothing(self):
+        b = self.bridge_with_start(room=0)
+        b.tick([])
+        self.assertIsNone(FakeJumper.last if FakeJumper.last and FakeJumper.last.armed else None)
+
+    def test_not_after_something_was_picked_up(self):
+        FakeJumper.last = None
+        b = self.bridge_with_start()
+        name = next(iter(DETECTED_PICKUPS))
+        self.game.flag(name)
+        b.tick([])
+        self.assertIsNone(FakeJumper.last)
+
+    def test_waits_for_the_random_starting_inventory(self):
+        FakeJumper.last = None
+        b = self.bridge_with_start()
+        b.random_start = True
+        b.state.start_swapped = False
+        b._swap_start = lambda *a: None                              # swap not done yet
+        b.tick([])
+        self.assertIsNone(FakeJumper.last)
+
+    def test_a_new_game_jumps_again(self):
+        b = self.bridge_with_start()
+        b.state.start_room_done = True
+        mem = self.game.mem
+        self.game.set_box(0, 33, 1)                                  # the untouched new-game box
+        self.game.set_box(1, 68, 3)
+        b.tick([])
+        self.assertFalse(b.state.start_room_done)
+
+
+class PlaytestLogTests(RoomTests):
+    def test_kill_table_bits_are_logged_with_the_room(self):
+        self.set_room(0x311)
+        b = self.bridge()
+        b.tick([])
+        self.game.mem[FLAGS + 0x2AC] |= 1                           # the Neptune bit in data.BOSSES
+        with self.assertLogs("RE1HDClient", "INFO") as cm:
+            b.tick([])
+        self.assertTrue(any("Kill table: +0x2ac.0 on in room 0x311 (Neptune Defeated)" in l for l in cm.output),
+                        cm.output)
+
+    def test_a_load_is_not_logged_as_kills(self):
+        b = self.bridge()
+        b.tick([])
+        for off in range(0x26C, 0x27C):
+            self.game.mem[FLAGS + off] = 0xFF
+        with self.assertLogs("RE1HDClient", "INFO") as cm:
+            b.tick([])
+            import logging
+            logging.getLogger("RE1HDClient").info("marker")
+        self.assertFalse(any("Kill table" in l for l in cm.output))
+
+    def test_real_death_is_snapshotted(self):
+        b = self.bridge()
+        b.tick([])
+        struct.pack_into("<i", self.game.mem, 0x4000 + hv.JILL_HEALTH_OFFSET, 0)
+        with self.assertLogs("RE1HDClient", "INFO") as cm:
+            b.tick([])
+        self.assertTrue(any("Death research real death t+0.0" in l for l in cm.output))

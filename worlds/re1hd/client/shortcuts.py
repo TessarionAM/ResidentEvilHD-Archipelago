@@ -1,13 +1,14 @@
 """
-Key Map shortcuts (TessarionAM, 2026-11-13): buttons that take Jill to the Main Hall, the Garden Shed or
-the Lab Entrance. Each one unlocks once she has been in that room (the game's own "room visited"
+Key Map shortcuts (TessarionAM, 2026-11-13; every typewriter room since 2026-11-14): buttons that take
+Jill to a save room. Each one unlocks once she has been in that room (the game's own "room visited"
 flag), and the whole feature is a YAML option (key_map_shortcuts).
 
 How: the method the Wrong Door Trap and the door shuffle lab proved in the game. Pressing a button
 "arms" the room Jill is in: every real door there now leads to the shortcut's room (the door
 animation table entry first, then the door record). She goes through any door and arrives there;
 everything is put back once she has arrived. A shortcut can't fire the moment the button is
-pressed: an instant warp with no door has never been tested in the game, so it isn't used.
+pressed: (2026-11-15) the room jump (client/room_jump.py, proven by the random start room) now does
+that instantly; this door way is only the fallback if the jump can't be set up.
 
 The memory scan (game object + door animation table) is shared with the Wrong Door Trap, and the
 two never run at the same time. State is saved, so if the client stops while a shortcut is armed,
@@ -22,13 +23,30 @@ from .wrong_door import WrongDoor, arrival
 
 log = logging.getLogger("RE1HDClient")
 
-# name -> (room number, arrive at the door from this room)
+# name -> (room number, arrive at the door from this room).
+# 2026-11-14 (TessarionAM): one shortcut per typewriter room, replacing Main Hall / Garden Shed /
+# Lab Entrance. The rooms are the game's own 11 save rooms (autosave.SAVE_ROOMS: the only rooms
+# 0x490B90 gives a save name); each arrives at a door with a known arrival spot (door_data.ARRIVALS).
 SHORTCUTS = {
-    "Main Hall": (0x106, 0x105),        # the Dining Room door
-    "Garden Shed": (0x11B, 0x11A),      # the Roofed Passage door
-    "Lab Entrance": (0x500, 0x305),     # from the Fountain
+    "Mansion Drug Room": (0x100, 0x101),        # from the West Wing Inner Stairway
+    "Dining Room": (0x105, 0x106),              # from the Main Hall
+    "East Wing Storeroom": (0x118, 0x207),      # from the East Wing Stairway
+    "Cabin": (0x314, 0x313),                    # from the Forest Pathway
+    "Residence Storeroom": (0x403, 0x400),      # from the Residence Entry Corridor
+    "Room 003": (0x40A, 0x408),                 # from the Gallery
+    "Mining Area": (0x307, 0x302),              # from the Falls Area
+    # 2026-11-15: from the Winding Underground Passage - that door's spot was checked in play (0 units,
+    # twice); Barry's lift (from the Generator Room) sets Jill down elsewhere (497 units away)
+    "Garbage Compactor Room": (0x316, 0x317),
+    "Altar Stairway Passage": (0x31A, 0x106),   # from the Main Hall
+    "Lab Item Box Room": (0x502, 0x500),        # from the Lab Entrance
+    "Lounge Room": (0x50E, 0x50C),              # the Lab's typewriter room, from the Lab Elevator Entry
 }
-ORDER = ("Main Hall", "Garden Shed", "Lab Entrance")
+ORDER = tuple(SHORTCUTS)
+# Short button labels for the Key Map (the full name is used everywhere else)
+LABELS = {"Mansion Drug Room": "Drug Room", "East Wing Storeroom": "E. Storeroom",
+          "Residence Storeroom": "Res. Storeroom", "Garbage Compactor Room": "Compactor",
+          "Altar Stairway Passage": "Altar Stairs", "Lab Item Box Room": "Lab Box Room"}
 
 
 class Shortcut(WrongDoor):
@@ -102,6 +120,9 @@ class Shortcut(WrongDoor):
             self._save()
             return
         if s.get("phase") == "armed" and room == s["home"]:
+            if s.get("name") not in SHORTCUTS:           # a shortcut an older version had armed
+                self.cancel(conn, pid)
+                return
             _room, came_from = SHORTCUTS[s["name"]]
             self._point_doors(conn, pid, room, s["target"], arrival(s["target"], came_from))
 

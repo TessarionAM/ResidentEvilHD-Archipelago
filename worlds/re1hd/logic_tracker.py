@@ -22,8 +22,11 @@ def _ok(requires: Tuple[str, ...], have: Counter, box: bool, box_gate: bool) -> 
     return True
 
 
+ORIGIN = START      # the seed's start room (random_start_room); the client sets it from slot data
+
+
 def reachable_rooms(have: Counter, box: bool, box_gate: bool) -> Set[str]:
-    rooms, changed = {START}, True
+    rooms, changed = {ORIGIN}, True
     while changed:
         changed = False
         for a, b, req, one_way in DOORS:

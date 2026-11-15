@@ -45,7 +45,8 @@ After loading an older save, the client re-sends exactly the items that save is 
   red until you can open them; one-way doors are green. Jill's room is highlighted using her
   position in the game. Hover over a room or door for details. With `door_randomisation`, a
   door's tooltip shows where it leads once you have used it. With `key_map_shortcuts`, buttons
-  set the next door to lead to the Main Hall, the Garden Shed or the Laboratory Entrance.
+  take Jill straight to any typewriter room you have already visited (the screen fades to black,
+  then she is there). With `boss_rush`, each boss room shows a skull until that boss is dead.
 
 ## Client commands
 
@@ -59,8 +60,10 @@ After loading an older save, the client re-sends exactly the items that save is 
 | `/box` | What has arrived in the item box since you last visited one. |
 | `/itembox` | Open the item box (also F7 or the `item_box_button`). `/itembox key F1-F12\|off`, `/itembox mode off\|save_rooms\|anywhere`. |
 | `/sortbox` | Sort the item box now. `/sortbox auto on\|off` toggles automatic sorting. |
-| `/shortcut <room>` | `main hall`, `garden shed` or `lab entrance`. Repeat to cancel. |
+| `/shortcut <room>` | Go to a typewriter room, e.g. `dining room` or `residence storeroom`. Repeat to cancel. |
 | `/autosave` | Save to the autosave slot now (in a save room). |
+| `/autoload on\|off` | After a death, load the autosave by itself (needs autosave). No word: show the setting. |
+| `/bosses` | Boss Rush: which bosses are dead. |
 | `/doorskip on\|off` | Skip door-opening animations. |
 | `/borderless on\|off` | Borderless fullscreen. |
 | `/overlay on\|off` | On-screen messages over the game. |

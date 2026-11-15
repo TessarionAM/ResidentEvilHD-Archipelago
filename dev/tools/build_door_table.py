@@ -13,10 +13,9 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent.parent      # dev/ (research data in dev/client)
-ROOT = HERE.parent                                   # repository root (worlds/re1hd)
-sys.path.insert(0, str(ROOT / "worlds"))
-sys.path.insert(0, str(ROOT / "worlds" / "re1hd"))
+HERE = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(HERE / "worlds"))
+sys.path.insert(0, str(HERE / "worlds" / "re1hd"))
 
 import importlib.util
 
@@ -29,7 +28,7 @@ def _load(name, path):
 
 
 # data.py / game_data.py are plain data modules (game_data imports .data for FILE_CHECKS)
-pkg = ROOT / "worlds" / "re1hd"
+pkg = HERE / "worlds" / "re1hd"
 sys.modules.setdefault("re1hd_build", type(sys)("re1hd_build"))
 data = _load("re1hd_build.data", pkg / "data.py")
 sys.modules["re1hd_build.data"] = data
@@ -132,7 +131,7 @@ def main():
             "why_not": "; ".join(why_not) if kind != "open" or why_not else "",
         }
 
-    out = ROOT / "worlds" / "re1hd" / "door_table.py"
+    out = HERE / "worlds" / "re1hd" / "door_table.py"
     counts = defaultdict(int)
     for t in table.values():
         counts[(t["kind"], t["shuffle"] or t["new_lock"])] += 1

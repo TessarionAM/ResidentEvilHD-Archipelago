@@ -34,6 +34,7 @@ KEY_NAMES = {t: KEY_ITEMS[t] for t in ALL_KEYS + [LOCKPICK]}
 ONE_SIDED_SHARE, LOCKPICK_SHARE = 5 / 30, 4 / 30
 BALANCE_RANGE = 3          # Mansion-only / Regional: max uses - min uses <= 3 (TessarionAM, 11:28)
 WRONG_DOOR_FLAG = 255      # the Wrong Door trap's own unlock flag
+
 ATTEMPTS = 60
 
 # Most locked doors per mode = every door the mode can lock (2026-11-12 batch: even with all of
@@ -111,7 +112,7 @@ def _fixed_uses() -> Counter:
 
 
 # ------------------------------------------------------------------ building a layout
-def make_layout(mode: int, count: int, rng, validate=None) -> Dict[str, dict]:
+def make_layout(mode: int, count: int, rng, validate=None, origin: str = START) -> Dict[str, dict]:
     """A random layout with `count` locked doors. validate(layout) -> None if completable, else a
     reason. Re-rolls up to ATTEMPTS times; raises LayoutError with the last reason if none works."""
     if mode == DISABLED:
@@ -119,7 +120,7 @@ def make_layout(mode: int, count: int, rng, validate=None) -> Dict[str, dict]:
     cands = candidate_doors(mode)
     reason = "no attempt made"
     for _ in range(ATTEMPTS):
-        layout = _random_layout(mode, count, cands, rng)
+        layout = _random_layout(mode, count, cands, rng, origin)
         reason = validate(layout) if validate else None
         if reason is None:
             return layout
@@ -127,7 +128,7 @@ def make_layout(mode: int, count: int, rng, validate=None) -> Dict[str, dict]:
                       f"({MODE_NAMES[mode]}, {count} locked doors). Last problem: {reason}")
 
 
-def _random_layout(mode: int, count: int, cands: List[str], rng) -> Dict[str, dict]:
+def _random_layout(mode: int, count: int, cands: List[str], rng, origin: str = START) -> Dict[str, dict]:
     locked = rng.sample(cands, min(count, len(cands)))
     n_one = round(count * ONE_SIDED_SHARE)
     lockpick_ok = [d for d in locked if mode == FULL or _area(DOOR_TABLE[d]) == "Mansion"]
@@ -163,7 +164,7 @@ def _random_layout(mode: int, count: int, cands: List[str], rng) -> Dict[str, di
             layout[did] = {"kind": "key", "sides": {a: [key_of[did], f], b: [key_of[did], f]}}
         else:
             layout[did] = {"kind": "open", "sides": {a: [0, 0], b: [0, 0]}}
-    _repair_one_sided(layout, rng)
+    _repair_one_sided(layout, rng, origin)
     return layout
 
 
@@ -175,14 +176,14 @@ def _everything() -> Counter:
     return Counter({n: 1 for n in names})
 
 
-def _repair_one_sided(layout: Dict[str, dict], rng) -> None:
+def _repair_one_sided(layout: Dict[str, dict], rng, origin: str = START) -> None:
     """A one-sided door whose locked side faces the rooms you can reach (and whose other side you
     can't reach any other way) is turned round, so it opens from the side you arrive at. Repeats
     until nothing changes; whatever is still cut off makes check_layout reject the layout."""
     from .data import ROOMS
     every = _everything()
     for _ in range(len(layout)):
-        rooms, _h, _b = reachable(effective_doors(layout), every, box_gate=False)
+        rooms, _h, _b = reachable(effective_doors(layout), every, box_gate=False, origin=origin)
         if set(ROOMS) <= rooms:
             return
         flipped = False
@@ -301,7 +302,7 @@ def apply_to_tracker(layout: Dict[str, dict], shuffle: Optional[dict] = None) ->
     slot data."""
     from . import door_shuffle, logic_tracker, tracker
     doors = effective_doors(layout)
-    logic_tracker.DOORS = door_shuffle.connections(shuffle or {}, doors)
+    logic_tracker.DOORS = with_start(door_shuffle.connections(shuffle or {}, doors), logic_tracker.ORIGIN)
     tracker.DOORS = doors
     req: Dict[frozenset, tuple] = {}
     for a, b, need, _one in doors:
@@ -327,12 +328,28 @@ def _ok(req, have: Counter, box: bool, box_gate: bool) -> bool:
     return True
 
 
-def reachable(doors, have: Counter, box_gate: bool) -> Tuple[Set[str], Counter, bool]:
+def with_start(doors, origin: str = START) -> List[tuple]:
+    """The doors as they are for a seed starting in `origin`: beyond the Stone & Metal gate the
+    client opens the gate from the start (data.GATE_SIDE_STARTS), so Roofed Passage -> Garden Shed
+    needs nothing."""
+    from .data import GATE_ITEM, GATE_LINK, GATE_SIDE_STARTS
+    if origin not in GATE_SIDE_STARTS:
+        return doors
+    out = []
+    for a, b, req, one_way in doors:
+        if (b, a) == GATE_LINK and GATE_ITEM in req:
+            req = tuple(r for r in req if r != GATE_ITEM)
+        out.append((a, b, req, one_way))
+    return out
+
+
+def reachable(doors, have: Counter, box_gate: bool, origin: str = START) -> Tuple[Set[str], Counter, bool]:
     """(rooms, items incl. events, item box reached) with `have`, like the world's regions."""
     have = Counter(have)
     box = False
+    doors = with_start(doors, origin)
     while True:
-        rooms, changed = {START}, True
+        rooms, changed = {origin}, True     # origin: the start room (random_start_room)
         while changed:
             changed = False
             for a, b, req, one_way in doors:
@@ -355,7 +372,8 @@ def reachable(doors, have: Counter, box_gate: bool) -> Tuple[Set[str], Counter, 
 
 def check_layout(layout, progression: List[str], locations: List[Tuple[str, str, tuple]],
                  goal_complete: bool, box_gate: bool, rng, start: Iterable[str] = (),
-                 everything: bool = True, doors: Optional[List[tuple]] = None) -> Optional[str]:
+                 everything: bool = True, doors: Optional[List[tuple]] = None,
+                 origin: str = START) -> Optional[str]:
     """None if the layout is completable, else a reason. Simulates Archipelago's assumed fill:
     each progression item is placed in a random location reachable with all the items not yet
     placed; then the goal must be reachable. `locations`: (name, room, requirements) of every
@@ -364,7 +382,7 @@ def check_layout(layout, progression: List[str], locations: List[Tuple[str, str,
         doors = effective_doors(layout)
     base = Counter(start)
     every = base + Counter(progression)
-    rooms, have, box = reachable(doors, every, box_gate)
+    rooms, have, box = reachable(doors, every, box_gate, origin)
     goal_room, goal_req = (FINAL_ROOM, FINAL_REQUIRES) if goal_complete else (GOAL_ROOM, ())
     if goal_room not in rooms or not _ok(goal_req, have, box, box_gate):
         return f"the goal ({goal_room}) can't be reached even with every item"
@@ -383,7 +401,7 @@ def check_layout(layout, progression: List[str], locations: List[Tuple[str, str,
         """Like Archipelago's sweep: items already placed in reachable locations count too."""
         got = set()
         while True:
-            rooms, have, box = reachable(doors, state, box_gate)
+            rooms, have, box = reachable(doors, state, box_gate, origin)
             new = [j for j, (loc, it) in enumerate(placed) if j not in got
                    and loc[1] in rooms and _ok(loc[2], have, box, box_gate)]
             if not new:
@@ -416,6 +434,12 @@ def check_layout(layout, progression: List[str], locations: List[Tuple[str, str,
         if not done or swaps > 200:
             return f"no reachable location left for {item} (a key behind its own doors?)"
     return None
+
+
+def start_locations(doors, locations: List[Tuple[str, str, tuple]], box_gate: bool, origin: str = START) -> int:
+    """How many item locations Jill can reach from `origin` with nothing (sphere 0)."""
+    rooms, have, box = reachable(doors, Counter(), box_gate, origin)
+    return sum(1 for _n, room, req in locations if room in rooms and _ok(req, have, box, box_gate))
 
 
 def simple_progression() -> Tuple[List[str], List[Tuple[str, str, tuple]]]:

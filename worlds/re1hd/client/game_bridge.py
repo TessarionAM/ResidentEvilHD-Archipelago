@@ -34,6 +34,8 @@ import struct
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from .autoload import AutoLoader
+from .room_jump import JUMPED, RoomJumper
 from .autosave import SAVE_ROOMS, AutosaveError, Autosaver
 from .box_sort import sorted_box
 from .door_skip import DoorSkipError, set_door_skip
@@ -110,6 +112,9 @@ class BridgeState:
     sword_uses_set: bool = False       # door lock randomiser: the Sword Key got the seed's number of uses
     shortcut: dict = field(default_factory=dict)             # Key Map shortcut in progress (shortcuts.py)
     door_shuffle: dict = field(default_factory=dict)         # door randomiser: changed table entries, used doors
+    autosave_made: bool = False        # the client autosaved at least once in this seed (autoload needs it)
+    autoload_choice: Optional[bool] = None   # /autoload on|off for this seed; None = the YAML option
+    start_room_done: bool = False      # random_start_room: Jill has been moved to the start room
 
 
 class StateFile:
@@ -124,7 +129,8 @@ class StateFile:
                            data.get("start_swapped", False), data.get("applied_traps", []),
                            data.get("box_unseen", []), data.get("wrong_door", {}),
                            data.get("sword_uses_set", False), data.get("shortcut", {}),
-                           data.get("door_shuffle", {}))
+                           data.get("door_shuffle", {}), data.get("autosave_made", False),
+                           data.get("autoload_choice"), data.get("start_room_done", False))
 
     def save(self, st: BridgeState):
         tmp = self.path.with_suffix(".tmp")
@@ -132,7 +138,9 @@ class StateFile:
                                    "undeliverable": st.undeliverable, "start_swapped": st.start_swapped,
                                    "applied_traps": st.applied_traps, "box_unseen": st.box_unseen,
                                    "wrong_door": st.wrong_door, "sword_uses_set": st.sword_uses_set,
-                                   "shortcut": st.shortcut, "door_shuffle": st.door_shuffle},
+                                   "shortcut": st.shortcut, "door_shuffle": st.door_shuffle,
+                                   "autosave_made": st.autosave_made, "autoload_choice": st.autoload_choice,
+                                   "start_room_done": st.start_room_done},
                               indent=1), encoding="utf-8")
         tmp.replace(self.path)          # atomic: never a half-written state file
 
@@ -153,6 +161,59 @@ BOX_ROOM_NUMBERS = {ROOM_NUMBERS[r] for r in _BOX_ROOMS if ROOM_NUMBERS.get(r)}
 JILL_HELD_WEAPON = 0x15D0     # Jill's held weapon type (item id - 1), 0 = nothing (equip watch)
 JILL_VARIANT = 0x1580         # which column of the weapon tables (0x4FB600; the menu passes it to 0x48D190)
 UNARM_TIMEOUT = 20.0          # seconds for the whole menu-style unequip
+# East Wing Stairway doorknob (TessarionAM, test 06, 2026-11-15). The door that breaks is East Wing
+# Stairway (207) <-> Dark Corridor (10a): two trips through it from the stairway, and on the way back
+# into the stairway the game says "The doorknob is broken. You can't pass through." The event
+# recorder (13:01-13:03, the same pattern twice) shows the game counting the trips in +0x248 bit 3
+# (1st) and bit 4 (2nd), and breaking it with +0x23A bit 0 on entering the stairway (unlock flag 14
+# clears at the same moment; before the 1st trip it is off too). The door records never change -
+# the old guard on the 'C' Corridor door (207 -> 204, flag 16) watched the wrong door.
+# 0.9.26 cleared the bits right after the break, but the stairway had already loaded the door as
+# broken (TessarionAM's re-test, 13:14). 0.9.27 un-counts the 2nd trip as soon as it's counted (Jill is
+# then in the Dark Corridor), so the game never reaches the break; the state stays as after the 1st trip.
+KNOB_BROKEN_BYTE, KNOB_BROKEN_BIT = 0x23A, 1 << 0
+KNOB_USES_BYTE, KNOB_FIRST_USE, KNOB_SECOND_USE = 0x248, 1 << 3, 1 << 4
+# Courtyard lifts follow Jill (TessarionAM, 2026-11-14: a lift left on the other floor nearly
+# soft-locked a run). Mapping run 2026-11-10: +0x249 bit 1 turned on as the pool lift went DOWN
+# (Water Pool -> Falls Area, 14:59:34 / 17:22:11) and off as it went UP (16:12:38, 16:33:50, 16:42:27);
+# bit 2 turned on as the Battery lift went UP (Falls Area -> Main Garden, 17:22:33) and off as it
+# went DOWN (17:28:52). On entering a room on one floor the client puts both lifts on that floor.
+# The rooms next to the lift rooms count too, so the lift is already there when the room loads.
+# Stone & Metal gate holder (TessarionAM, 2026-11-14, test 07). The gate in the Roofed Passage only
+# blocks the way INTO the Garden Shed. +0x22D bit 3 opens it (and makes the game draw the object in
+# it); +0x326 bit 1 is set with it when the player really puts the object in; taking the object
+# back clears both (and sets +0x304 bit 0) - which shut the Courtyard off for good after the Altar,
+# where the object is used up. Test 07: setting only bit 3 opens the gate; taking the drawn object
+# then gives a Stone & Metal Object and shuts it again (no crash). Setting +0x304 bit 0 too CRASHES
+# on pickup ("itemv\v.arc"), so the client never touches it.
+# The holder: once the object has been received from the multiworld, or taken back off the gate,
+# bit 3 is kept on. An object picked up from a gate the CLIENT opened (bit 3 on, +0x326 bit 1 off)
+# is a free copy and is taken away again. One the player put in themselves is theirs to take.
+SM_GATE_BYTE, SM_GATE_BIT = 0x22D, 1 << 3
+SM_PLACED_BYTE, SM_PLACED_BIT = 0x326, 1 << 1
+SM_TAKEN_BYTE, SM_TAKEN_BIT = 0x304, 1 << 0
+SM_OBJECT_ID = 53
+ROOFED_PASSAGE = 0x11A
+SM_COPY_WAIT = 4.0                               # seconds to see the copy arrive in the inventory
+
+# Boss Rush: Lab Tyrant room (after it the Laboratory self-destructs - warn if a boss is left)
+MAIN_LAB_ROOM = 0x513
+# Second arrival spots seen in play for a door pair our door data has one spot for (the position
+# check logged them): (from room, x, y, z). 0x20A from 0x208: 222 units off our spot three times
+# (same distance each time; the coordinates were logged on 2026-11-15) - most likely the Fish Tank
+# Room's other door from the same corridor.
+SEEN_ARRIVALS = {0x20A: [(0x208, 265.4, 0.0, -143.5)]}
+SIGNAL_ROCKETS_ID = 106
+LIFT_FLAGS_BYTE = 0x249
+POOL_LIFT_DOWN, BATTERY_LIFT_UP = 1 << 1, 1 << 2
+LIFT_UPPER_ROOMS = {0x11B, 0x300, 0x301}        # Garden Shed, Main Garden, Water Pool
+LIFT_LOWER_ROOMS = {0x302, 0x304, 0x307}        # Falls Area, Zigzag Path, Mining Area
+# 2026-11-15 (TessarionAM's seed): a lift is only moved once the game has made it usable - the pool
+# lift after the Square Crank drained the pool, the Falls Area lift once the Battery is in it.
+# Moving the pool lift down before that let Jill ride up from the Falls Area without the crank,
+# which the logic doesn't allow (Water Pool <-> Falls Area needs the pool drained).
+POOL_DRAINED_BYTE, POOL_DRAINED_BIT = 0x221, 1 << 4
+BATTERY_IN_BYTE, BATTERY_IN_BIT = 0x22A, 1 << 6
 MENU_FLAGS, MENU_SCREEN = 0x2C, 0x34   # inventory struct: bit 0x1000 / value 3 while the menu is open
 
 # Jill's health states, from the game's own status code (0x0054E170, 2026-11-11): health below
@@ -254,6 +315,12 @@ class GameBridge:
         self.door_shuffler = DoorShuffler(None, self.state.door_shuffle, self._save_door_shuffle, self.wrong_door)
         self.door_shuffle_checked = False        # an earlier session's table changes put back
         self.shortcuts_unlocked: frozenset = frozenset()   # names whose room Jill has been in
+        self._lift_room = None                           # last room the lifts were set for
+        self._gate_last = None                           # (gate bit, placed bit) last tick
+        self._last_gate_slots = None
+        self._gate_copy = None                           # (inventory before, since) - a free copy to take away
+        self._gate_logged = False
+        self._locks_logged = None                        # room whose door locks were last logged
         self.session_token = self.rng.getrandbits(48)
         self.pickups_by_room = pickups_by_room()
         # door lock randomiser (slot_data "door_locks" / "key_uses", set by the client)
@@ -265,6 +332,9 @@ class GameBridge:
         self.jill_pos = None                           # (x, y, z) in the room's coordinates (Key Map)
         self.destination = ITEM_BOX              # set from slot_data by the client
         self.random_start = False                # option random_starting_inventory
+        self.boss_rush = False                   # option boss_rush (2026-11-14)
+        self.bosses_dead: Dict[str, bool] = {}   # boss event name -> kill bit on (last read)
+        self.boss_warned_room = None             # Main Laboratory warning, once per entry
         self.trap_damage_percent = 25            # options damage_trap_amount / _can_kill
         self.trap_can_kill = False
         self.death_link_kill = False             # option death_link_effect (False = lose a state)
@@ -282,19 +352,30 @@ class GameBridge:
         self.autosaver = None
         self.autosaver_pid = None
         self.autosaver_factory = Autosaver       # tests replace this
+        self.autoload = False                    # option autoload_after_death (needs autosave)
+        self.start_room = 0                      # random_start_room: stage*0x100+room, 0 = Main Hall
+        self.start_room_name = ""
+        self.jumper_factory = RoomJumper         # tests replace this
+        self.jumper = None
+        self.jumper_pid = None
+        self.start_jump_armed_at: Optional[float] = None
+        self.shortcut_jump: Optional[tuple] = None   # (name, room, armed at): an instant shortcut
+        self.gate_open = False                   # random start beyond the S&M gate (slot data gate_open)
+        self.autoloader: Optional[AutoLoader] = None
+        self.autoloader_pid = None
         self.as_room: Optional[int] = None       # room Jill is in, for "just walked into a save room"
         self.as_since = 0.0
         self.as_armed = False                    # walked in through a door (not a load) -> may save
         self.last_load_time = 0.0                # last time a save load / death was seen
         self.next_drop_try = 0.0                 # held-weapon fix rate limit
         self.unarmed_once = False                # random start: empty hands confirmed this run
+        self.swapped_this_run = False            # the random start swap happened in THIS client run
         self._in_tick, self._jill_cache = False, None   # Jill's object: looked up once per tick
         self.visited_block: Optional[bytes] = None       # the game's "room visited" flags, last tick
         self._room_flags, self._room_flags_for = [], None
         self.last_spray: Optional[int] = None    # Insecticide Sprays in the inventory + box last tick
         self.last_inv_spray: Optional[int] = None
         self.extra_checked: set = set()          # checks the client sends itself (a spray used)
-        self.lisa_warned = False                 # flamethrower warning shown for this visit
         self.unarm: Optional[dict] = None        # the menu's unequip in progress (_unarm_step)
         self.room_since = 0.0
         self.fresh_handled = False               # this new game has already been reset
@@ -359,7 +440,7 @@ class GameBridge:
         if not ds.on:
             return
         self.wrong_door.warm_up(self.conn, pid)
-        busy = self.wrong_door.active or bool(self.shortcut.s)
+        busy = self.wrong_door.active or bool(self.shortcut.s) or self.shortcut_jump is not None
         ds.update(self.conn, flags, number, pid, busy=busy)
 
     def _door_list_check(self, number: Optional[int]):
@@ -393,6 +474,21 @@ class GameBridge:
         if self.wrong_door.active:
             return "Not during a Wrong Door Trap."
         pid = getattr(self.conn, "pid", None)
+        if self.shortcut_jump is not None:
+            jumping = self.shortcut_jump[0]
+            self._cancel_shortcut_jump()
+            if jumping == name:
+                return f"Shortcut to the {name} cancelled."
+        if self.start_jump_armed_at is not None:
+            return "Wait until Jill is in her start room."
+        if self.current_room == SHORTCUTS[name][0]:
+            return f"Jill is already in the {name}."
+        # 2026-11-15 (TessarionAM): instant, like the random start room - the room jump (fade to
+        # black, then the room). The old "next door you go through" way is the fallback.
+        if not self.shortcut.s:
+            message = self._jump_shortcut(name)
+            if message:
+                return message
         if self.shortcut.target_name == name:
             self.shortcut.cancel(self.conn, pid)
             return f"Shortcut to the {name} cancelled."
@@ -406,7 +502,55 @@ class GameBridge:
         self._save_shortcut()
         return f"Shortcut: the next door Jill goes through takes her to the {name}. (Press it again to cancel.)"
 
+    def _get_jumper(self):
+        """The room jump stub (client/room_jump.py), installed once per game process."""
+        pid = getattr(self.conn, "pid", None)
+        if self.jumper is None or self.jumper_pid != pid:
+            jumper = self.jumper_factory(self.conn, log)
+            jumper.install()
+            self.jumper, self.jumper_pid = jumper, pid
+        return self.jumper
+
+    def _jump_shortcut(self, name: str) -> Optional[str]:
+        """Arm the room jump to a shortcut room. None = it couldn't (use the door way instead)."""
+        room, came_from = SHORTCUTS[name]
+        try:
+            if not self._get_jumper().arm(room, came_from):
+                return None
+        except ProcessError as exc:
+            log.warning("Shortcut: the room jump couldn't be set up (%s) - using the next door instead.", exc)
+            return None
+        self.shortcut_jump = (name, room, time.time())
+        log.info("Shortcut: jumping Jill to the %s (%#x).", name, room)
+        return f"Shortcut: taking Jill to the {name}. (Press it again to cancel.)"
+
+    def _cancel_shortcut_jump(self):
+        if self.shortcut_jump is not None and self.jumper is not None:
+            try:
+                if self.jumper.flag() != JUMPED:
+                    self.jumper.cancel()
+            except Exception:
+                pass
+        self.shortcut_jump = None
+
+    def _shortcut_jump_tick(self, number: Optional[int]):
+        if self.shortcut_jump is None:
+            return
+        name, room, since = self.shortcut_jump
+        if self.jumper is None or self.jumper_pid != getattr(self.conn, "pid", None):
+            self.shortcut_jump = None                # the game restarted
+            return
+        if self.jumper.flag() == JUMPED and number == room:
+            self.jumper.cancel()
+            self.shortcut_jump = None
+            log.info("Shortcut: Jill is in the %s.", name)
+        elif self.jumper.flag() != JUMPED and time.time() - since > 30:
+            self._cancel_shortcut_jump()
+            log.info("Shortcut to the %s: Jill wasn't free to move for 30 s - cancelled.", name)
+            self.notices.append(f"Shortcut to the {name} cancelled: Jill wasn't free to move.")
+
     def _shortcut_tick(self, flags: int, number: Optional[int]):
+        self._shortcut_jump_tick(number)
         sc = self.shortcut
         if not sc.s:
             return
@@ -471,6 +615,7 @@ class GameBridge:
             return
         from .door_data import ARRIVALS
         spots = [a for a in ARRIVALS.get(room, []) if a[0] == came_from and any(a[1:4])]
+        spots += [a for a in SEEN_ARRIVALS.get(room, []) if a[0] == came_from]
         if not spots:
             return
         x, _y, z = self.jill_pos
@@ -479,14 +624,18 @@ class GameBridge:
             log.info("Jill position check %#x (from %#x): OK, at the door spot (%.0f units).", room, came_from, d)
         else:
             log.info("Jill position check %#x (from %#x): %.0f units from the door spot - the Key Map may "
-                     "be off; please report this with your client log.", room, came_from, d)
+                     "be off. Jill is at (%.1f, %.1f, %.1f); Claude can add this spot from the log.",
+                     room, came_from, d, x, _y, z)
 
     def _lock_tick(self, inv: int, number: Optional[int]):
         """Door lock randomiser: write the seed's lock into every door record of the room Jill is in
         (the game rebuilds them on every room load; this runs every 0.1 s, long before she can reach
         a door). Same live door list as the Wrong Door Trap. Verified in-game 2026-11-12: a lock
         written like this works, a key loses one use per door, both sides share one unlock flag."""
-        if not self.lock_sides or number is None:
+        if number is None:
+            return
+        self._log_room_locks(number)
+        if not self.lock_sides:
             return
         wd = self.wrong_door
         pid = getattr(self.conn, "pid", None)
@@ -513,6 +662,130 @@ class GameBridge:
                     self.state_file.save(self.state)
                     log.info("Door lock randomiser: Sword Key set to %d uses.", self.sword_uses)
                     break
+
+    def _log_room_locks(self, number: int):
+        """Once per room entry, ~1 s in: every locked door side here, its unlock flag and whether
+        that flag is set. 2026-11-14 (TessarionAM): the Graveyard gate to the Large Gallery was
+        locked again at 01:23 after working at 23:04 and 00:32, and the log couldn't say why."""
+        if self._locks_logged == number or time.time() - self.room_since < 1.0:
+            return
+        wd = self.wrong_door
+        game = wd._game(self.conn, getattr(self.conn, "pid", None))
+        if not game:
+            return
+        self._locks_logged = number
+        parts = []
+        try:
+            for _rec, dest in wd._live(self.conn, game):
+                cur = self.conn.read_bytes(_rec + 0x43, 5)
+                kind, flag = cur[0] & 0x7F, struct.unpack("<i", cur[1:])[0]
+                if kind:
+                    state = "open" if flag in self.unlocked_flags else "locked"
+                    parts.append(f"->{dest:#x} type {kind} flag {flag} {state}")
+        except Exception:
+            return
+        if parts:
+            log.info("Locks in %#x: %s.", number, "; ".join(parts))
+
+    def _knob_tick(self, flags: int):
+        """East Wing Stairway doorknob - see KNOB_BROKEN_BYTE."""
+        try:
+            uses = self.conn.read_bytes(flags + KNOB_USES_BYTE, 1)[0]
+            if uses & KNOB_SECOND_USE:
+                # the 2nd trip is counted while Jill is still in the Dark Corridor; un-count it so
+                # the stairway never loads "broken" (v0.9.26 reset it after the break, but the
+                # stairway had already loaded the broken door by then - TessarionAM, 13:14)
+                self.conn.write_bytes(flags + KNOB_USES_BYTE, bytes([uses & ~KNOB_SECOND_USE & 0xFF]))
+                log.info("Doorknob: second trip un-counted, so the handle can't break (+0x248 %02x).", uses)
+            broken = self.conn.read_bytes(flags + KNOB_BROKEN_BYTE, 1)[0]
+            if broken & KNOB_BROKEN_BIT:
+                # an older save that already has it broken: fixed from the next time the room loads
+                self.conn.write_bytes(flags + KNOB_BROKEN_BYTE, bytes([broken & ~KNOB_BROKEN_BIT & 0xFF]))
+                log.info("Doorknob: was already broken (+0x23A %02x) - mended; it works again once the "
+                         "East Wing Stairway is entered again.", broken)
+        except Exception as exc:
+            log.debug("Doorknob check: %s", exc)
+
+    def _gate_tick(self, flags: int, inv: int, received: List[Incoming], number: Optional[int]):
+        """Stone & Metal gate holder - see SM_GATE_BYTE."""
+        try:
+            raw = self.conn.read_bytes(flags + SM_GATE_BYTE, 1)[0]
+            gate = bool(raw & SM_GATE_BIT)
+            placed = bool(self.conn.read_bytes(flags + SM_PLACED_BYTE, 1)[0] & SM_PLACED_BIT)
+            taken = bool(self.conn.read_bytes(flags + SM_TAKEN_BYTE, 1)[0] & SM_TAKEN_BIT)
+            last, self._gate_last = self._gate_last, (gate, placed)
+            if self._gate_copy is not None:
+                before, since = self._gate_copy
+                plan = plan_removal(before, self._slots(inv), SM_OBJECT_ID)
+                if plan == [] and time.time() - since < SM_COPY_WAIT:
+                    return                                   # the copy isn't in the inventory yet
+                self._gate_copy = None
+                if plan and self._apply(inv, plan, self._slots(inv)):
+                    log.info("Stone & Metal gate: took away the copy picked up from the open gate.")
+                    self.notices.append("The gate keeps its Stone & Metal Object - it stays open for you.")
+                    self.journal.write(event="sm_gate_copy_removed")
+                elif plan is None:
+                    log.warning("Stone & Metal gate: the inventory changed unexpectedly - left it alone.")
+            elif (last is not None and last[0] and not gate and not last[1] and number == ROOFED_PASSAGE
+                  and self._last_gate_slots is not None):
+                # the drawn object was taken from a gate the client opened: a free copy
+                self._gate_copy = (self._last_gate_slots, time.time())
+                return
+            received_sm = any(i.game_id == SM_OBJECT_ID for i in received[:self.state.delivered])
+            if not gate and (received_sm or taken or self.gate_open):
+                self.conn.write_bytes(flags + SM_GATE_BYTE, bytes([raw | SM_GATE_BIT]))
+                why = ("taken back off the gate" if taken else "received" if received_sm
+                       else "put in for you: your start room is on the Courtyard side")
+                log.info("Stone & Metal gate: kept open (the object was %s).", why)
+                if not self._gate_logged:
+                    self.notices.append("The Roofed Passage gate to the Garden Shed is open for good.")
+                    self._gate_logged = True
+            self._last_gate_slots = self._slots(inv)
+        except Exception as exc:
+            log.debug("Stone & Metal gate: %s", exc)
+
+    def _lift_tick(self, flags: int, number: Optional[int]):
+        """Courtyard lifts follow Jill's floor (see LIFT_FLAGS_BYTE). Written once per change of
+        (room, room a door / ride is taking her to): the target room changes ~1 s before the new
+        room loads, and the game sets the lifts up as the room loads - so writing for the room she's
+        GOING to puts them right in time. (v0.9.23 wrote on arrival: after riding the pool lift down
+        from the Water Pool, the Falls Area had already loaded with the Battery lift at the top -
+        TessarionAM, 2026-11-15.) A ride flips its own bit the same way, so this never fights it.
+        Each lift only once it works in the game (POOL_DRAINED_BYTE / BATTERY_IN_BYTE)."""
+        try:
+            stage, room = struct.unpack("<ii", self.conn.read_bytes(flags + hv.DOOR_TARGET_ROOM_OFFSET, 8))
+            target = stage * 0x100 + room if 1 <= stage <= 6 and 0 <= room < 0x100 else None
+        except Exception:
+            target = None
+        key = (number, target)
+        if key == self._lift_room:
+            return
+        self._lift_room = key
+        where = target if target in LIFT_UPPER_ROOMS | LIFT_LOWER_ROOMS else number
+        if where in LIFT_UPPER_ROOMS:
+            top, floor = True, "top"
+        elif where in LIFT_LOWER_ROOMS:
+            top, floor = False, "bottom"
+        else:
+            return
+        try:
+            cur = self.conn.read_bytes(flags + LIFT_FLAGS_BYTE, 1)[0]
+            pool_ok = bool(self.conn.read_bytes(flags + POOL_DRAINED_BYTE, 1)[0] & POOL_DRAINED_BIT)
+            battery_ok = bool(self.conn.read_bytes(flags + BATTERY_IN_BYTE, 1)[0] & BATTERY_IN_BIT)
+            new = cur
+            if pool_ok:
+                new = (new & ~POOL_LIFT_DOWN) if top else (new | POOL_LIFT_DOWN)
+            if battery_ok:
+                new = (new | BATTERY_LIFT_UP) if top else (new & ~BATTERY_LIFT_UP)
+            new &= 0xFF
+            if new != cur:
+                self.conn.write_bytes(flags + LIFT_FLAGS_BYTE, bytes([new]))
+                log.info("Courtyard lifts: Jill is %s the %s floor (room %#x) - lifts moved there "
+                         "(+0x249 %02x -> %02x; pool lift %s, Battery lift %s).",
+                         "going to" if where == target and target != number else "on", floor, where, cur, new,
+                         "moved" if pool_ok else "not working yet", "moved" if battery_ok else "not working yet")
+        except Exception as exc:
+            log.debug("Courtyard lifts: %s", exc)
 
     def _wrong_door_tick(self, flags: int, number: Optional[int]):
         """Wrong Door Trap (wrong_door.py): runs before the pickup flags are read, so flags it
@@ -642,9 +915,13 @@ class GameBridge:
         try:
             inv, flags = self._ptr(self.inv_ptr), self._ptr(self.flags_ptr)
             if inv == 0 or flags == 0:          # title screen / loading
+                self._autoload_tick()
                 self.last_bits, self.last_inv, self.pending_removals = None, None, []
                 self.as_room, self.as_armed = None, False
                 self.last_spray = self.last_inv_spray = None
+                self._lift_room = None           # a loaded save sets its lifts again
+                self._gate_last = self._gate_copy = None
+                self._kill_last = None           # a load sets many kill bits at once
                 if self.mapper:
                     self.mapper.last_zone = self.mapper.last_inv = None
                 return None
@@ -664,6 +941,9 @@ class GameBridge:
             self._shortcut_tick(flags, number)
             if self.save_known_ours and self._jill_present():
                 self._lock_tick(inv, number)
+                self._knob_tick(flags)
+                self._lift_tick(flags, number)
+                self._gate_tick(flags, inv, received, number)
             self.jill_pos = self._jill_position()
             self._check_position(number)
             try:                                # Key Map: doors you've unlocked show as ordinary doors
@@ -690,7 +970,10 @@ class GameBridge:
                 # Title screen / menus / loading: the game's memory there is NOT the game you're
                 # about to play (seed test 3, 2026-11-11: items "delivered" at the title screen
                 # were wiped by New Game). Touch nothing until Jill is really in the game.
+                self._autoload_tick()
                 return None
+            if self.autoloader is not None and self.autoloader.armed:
+                self.autoloader.disarm("Jill is back in the game")
             self._new_game_reset(inv, number, bits)
             if self._protect_records(inv):
                 pass                          # item box open in a save we already know: carry on
@@ -706,6 +989,7 @@ class GameBridge:
                 self._unequip_missing(inv, slots)
             self._guard(inv, bits, slots)
             self._setup_start_box(inv, number, bits)
+            self._start_room_tick(number, bits)
             self._check_save_marker(inv, bits)
             self.last_received = received
             self._deliver(inv, received)
@@ -718,14 +1002,71 @@ class GameBridge:
             self.last_inv = self._slots(inv)
             self.last_def = self._defense(inv)
             self._spray_watch(inv)
-            self._flamethrower_warning(number)
             checked = {name for name, on in bits.items() if on}
             checked |= self._room_entries(flags, number)
+            self._kill_watch(flags, number)
+            checked |= self._boss_rush(flags, number)
             checked |= self.extra_checked
             return checked - masked
         except ProcessError as exc:
             self.drop_game(str(exc))
             return None
+
+    def _kill_watch(self, flags: int, number: Optional[int]):
+        """Playtest log (2026-11-15, test 04): every bit that turns on in the per-enemy kill table
+        (+0x26C..+0x2AF) with the room it happened in, so the boss bits in data.BOSSES can be
+        checked against real kills (Neptune's especially). Many bits at once = a save was loaded:
+        not logged."""
+        try:
+            table = self.conn.read_bytes(flags + 0x26C, 0x44)
+        except Exception:
+            return
+        old, self._kill_last = getattr(self, "_kill_last", None), table
+        if old is None or len(old) != len(table):
+            return
+        new = [(0x26C + i, b) for i in range(len(table)) for b in range(8)
+               if table[i] >> b & 1 and not old[i] >> b & 1]
+        if not new or len(new) > 8:
+            return
+        from ..data import BOSSES
+        names = {(off, bit): name for name, _room, (off, bit), _req in BOSSES}
+        for off, bit in new:
+            boss = names.get((off, bit))
+            log.info("Kill table: +%#x.%d on in room %s%s.", off, bit,
+                     f"{number:#x}" if number is not None else "?", f" ({boss})" if boss else "")
+
+    def _boss_rush(self, flags: int, number: Optional[int]) -> set:
+        """Boss Rush (option boss_rush, EXPERIMENTAL): each boss's bit in the per-enemy kill table
+        (data.BOSSES). When all seven are on, the Boss Rush check is sent; it holds the Signal
+        Rockets. The bits are saved with the game, so this is read again every tick."""
+        if not self.boss_rush:
+            return set()
+        from ..data import BOSSES, BOSS_RUSH_LOCATION
+        try:
+            table = self.conn.read_bytes(flags + 0x26C, 0x44)          # +0x26C..+0x2AF
+        except Exception:
+            return set()
+        dead = {name: bool(table[off - 0x26C] >> bit & 1) for name, _room, (off, bit), _req in BOSSES}
+        for name, on in dead.items():
+            if on and self.bosses_dead.get(name) is False:
+                left = sum(1 for v in dead.values() if not v)
+                log.info("Boss Rush: %s (%d left).", name, left)
+                self.notices.append(f"Boss Rush: {name}! " + (f"{left} to go." if left else
+                                    "All seven - the Signal Rockets are coming."))
+        self.bosses_dead = dead
+        if number == MAIN_LAB_ROOM and self.boss_warned_room != number:
+            missing = [n.replace(" Defeated", "") for n, on in dead.items() if not on and n != "Tyrant Defeated"]
+            if missing:
+                self.notices.append(("Boss Rush: still alive - " + ", ".join(missing) + ". After the Tyrant "
+                                     "the Laboratory self-destructs and you can't go back for them!", "warning"))
+                log.warning("Boss Rush: Main Laboratory reached with bosses left: %s", ", ".join(missing))
+        self.boss_warned_room = number
+        return {BOSS_RUSH_LOCATION} if all(dead.values()) else set()
+
+    def bosses_status(self) -> List[str]:
+        from ..data import BOSSES
+        return [f"{name.replace(' Defeated', '')}: {'dead' if self.bosses_dead.get(name) else 'alive'}"
+                for name, *_rest in BOSSES]
 
     def _spray_watch(self, inv: int):
         """Using an Insecticide Spray removes the Gallery's own spray from the game (TessarionAM,
@@ -749,21 +1090,6 @@ class GameBridge:
             log.info("An Insecticide Spray was used: the Gallery's spray is gone, its check is sent.")
         self.last_spray = count
 
-    def _flamethrower_warning(self, room: Optional[int]):
-        """Barry takes the cave lift up as soon as Jill enters the passage beyond the Garbage
-        Compactor Room, and the lift breaks: the only way out is Lisa's door, which needs the
-        Broken Flamethrower. Received items go to the box, so warn if she isn't carrying it."""
-        if room != GARBAGE_COMPACTOR_ROOM:
-            self.lisa_warned = False
-            return
-        if self.lisa_warned or time.time() - self.room_since < 1.0:
-            return
-        self.lisa_warned = True
-        if all(sid != FLAMETHROWER_ID for sid, _q in self._slots(self.cur_inv)[:8]):
-            self.notices.append(("Carry the Broken Flamethrower before going on! Past the next door "
-                                 "Barry takes the lift up and Lisa's door is the only way out.", "warning"))
-            log.warning("Garbage Compactor Room without the Broken Flamethrower in the inventory.")
-
     def _swap_start(self, inv: int, room: Optional[int], bits: Dict[str, bool], slots):
         """Random starting inventory: on a brand-new game (Main Hall, nothing picked up, exactly
         the vanilla Handgun + Combat Knife), take those two away once per seed. The two random
@@ -781,6 +1107,7 @@ class GameBridge:
         if SLOT.unpack(self.conn.read_bytes(eq, SLOT.size))[0] == VANILLA_START[0][0]:
             self.conn.write_bytes(eq, SLOT.pack(*EMPTY))       # unequip the removed Handgun
         self.state.start_swapped = True
+        self.swapped_this_run = True
         self.state_file.save(self.state)
         log.info("Random starting inventory: took the Handgun and Combat Knife; your 2 starting items follow.")
         self.notices.append("Your Handgun and Knife are now in the multiworld - 2 random items instead!")
@@ -804,8 +1131,7 @@ class GameBridge:
         game only changes her weapon when the inventory menu closes after a change. We do what
         the menu does on unequip (v0.9.8, see _unarm_step), with the menu closed, after 2 s in the
         room, and only while Jill can move. Done when she holds a weapon that isn't in her
-        inventory, and once per client run after the random start (that also fixes a save
-        already stuck in the Handgun pose, seed test 6)."""
+        inventory, and once right after the random start swap (same client run)."""
         if self.unarm:
             self._unarm_step()
             return
@@ -817,7 +1143,11 @@ class GameBridge:
             return
         held = self._u32(obj + JILL_HELD_WEAPON)
         stray = held != 0 and not any(sid == held + 1 for sid, _ in slots[:8])
-        if not stray and self.unarmed_once:
+        # 2026-11-15 (TessarionAM: Jill T-posed for a second when the client connected to a save
+        # mid-game): the menu-style put-away also ran once per client run with nothing to fix. Now
+        # only for a weapon she holds that isn't in her inventory, or straight after the random
+        # start took the Handgun away (in this client run).
+        if not stray and (self.unarmed_once or not self.swapped_this_run):
             return
         menu = struct.unpack("<ii", self.conn.read_bytes(inv + MENU_FLAGS, 4) + self.conn.read_bytes(inv + MENU_SCREEN, 4))
         if menu[0] & 0x1000 or menu[1] != 0:
@@ -921,6 +1251,20 @@ class GameBridge:
     def _hp(self, obj: int) -> Tuple[int, int]:
         return struct.unpack("<ii", self.conn.read_bytes(obj + hv.JILL_HEALTH_OFFSET, 8))
 
+    def _death_snapshot(self, obj: int):
+        """Research log for the Death Link "kill" bug (2026-11-15): Jill's object +0x1400..+0x15FF
+        at the moment of a death and 0.5 s / 2 s later - for a real death and for a Death Link kill -
+        so the field that starts the death animation can be found by comparing the two."""
+        snaps = getattr(self, "_death_snaps", None)
+        if not snaps or time.time() < snaps[0][0]:
+            return
+        _due, label = snaps.pop(0)
+        try:
+            raw = self.conn.read_bytes(obj + 0x1400, 0x200)
+        except Exception:
+            return
+        log.info("Death research %s: Jill+0x1400 %s", label, raw.hex())
+
     def _set_hp(self, obj: int, hp: int):
         self.conn.write_bytes(obj + hv.JILL_HEALTH_OFFSET, struct.pack("<i", hp))
 
@@ -935,6 +1279,13 @@ class GameBridge:
             self.jill_died = True
             self.as_room, self.as_armed, self.last_load_time = None, False, time.time()
             log.info("Jill died.")
+        if self.last_hp is not None and self.last_hp > 0 and hp <= 0:
+            self._arm_autoload()                 # any death, Death Link ones included
+            ours = time.time() < self.ignore_death_until
+            now = time.time()
+            self._death_snaps = [(now, f"{'Death Link kill' if ours else 'real death'} t+0.0"),
+                                 (now + 0.5, "t+0.5"), (now + 2.0, "t+2.0")]
+        self._death_snapshot(obj)
         self.last_hp = hp
         if self.deaths_to_apply and hp > 0 and mx > 0:
             self.deaths_to_apply -= 1
@@ -945,6 +1296,11 @@ class GameBridge:
             self.ignore_death_until = time.time() + 15   # a death we caused isn't sent back
             self._set_hp(obj, new)
             self.last_hp = new
+            if new <= 0:
+                # our own write doesn't go through the "health reached 0" check above
+                now = time.time()
+                self._death_snaps = [(now, "Death Link kill t+0.0"), (now + 0.5, "t+0.5"), (now + 2.0, "t+2.0")]
+                self._arm_autoload()
             log.info("Death Link: Jill's health %d -> %d.", hp, new)
             self.notices.append("Death Link! Jill " + ("dies." if new <= 0 else "loses a health state."))
 
@@ -1013,11 +1369,10 @@ class GameBridge:
 
     def _save_is_ours(self, inv: int, bits: Dict[str, bool]) -> bool:
         """Is the loaded game this seed's? Box slot 255 holds {0, seed tag} (written by us).
-        A game with nothing picked up yet (New Game keeps the old box records) is ours; so is an
-        untagged save that has our delivery record in slot 256 (an older client, this seed). Both
-        get the tag.
+        A game with nothing picked up yet (New Game keeps the old box records) is ours and
+        gets the tag.
         Anything else - another seed's tag, an item in slot 255, or an untagged save with things
-        picked up and no delivery record - is someone else's save: /adopt overrides."""
+        picked up (even with a delivery record) - is someone else's save: /adopt overrides."""
         if not self.seed_tag:
             self.save_known_ours = True
             return True
@@ -1036,8 +1391,13 @@ class GameBridge:
             why = "item box slot 255 holds an item (the client keeps this seed's tag there)"
         elif tag != 0:
             why = "it was played with a different seed"
-        elif not (mid == 0 and mcount > 0):
-            why = "it has pickups done but no record from this seed"
+        else:
+            # 2026-11-14 (TessarionAM): an untagged save with a delivery record used to count as
+            # "this seed, older client". A save from an earlier seed passed that way and sent its
+            # 30 old pickups as checks. Every save of a current seed is tagged when it's first
+            # loaded or started, so an untagged save with pickups is another seed's: /adopt.
+            why = ("it has no tag from this seed (made by an older client or another seed)"
+                   + (f"; its record says {mcount} items received" if mid == 0 and mcount else ""))
         if why is None:
             self.conn.write_bytes(self._tag_address(inv), SLOT.pack(0, self.seed_tag))
             log.info("This save now belongs to this seed (tag %d written to box slot 255).", self.seed_tag)
@@ -1066,6 +1426,9 @@ class GameBridge:
             return
         self.fresh_handled = True
         st = self.state
+        if st.start_room_done:                   # a new game: the start room jump happens again
+            st.start_room_done = False
+            self.state_file.save(st)
         mid, mcount = SLOT.unpack(self.conn.read_bytes(self._marker_address(inv), SLOT.size))
         if st.delivered == 0 and not st.start_swapped and (mid, mcount) == (0, 0):
             return
@@ -1123,14 +1486,22 @@ class GameBridge:
             result = saver.poll()
             if result is None:
                 if now > self.as_deadline:
+                    waited = saver.waiting_for_control()
                     saver.cancel()
                     self.as_deadline = None
-                    log.warning("Autosave didn't finish in time.")
+                    if waited:
+                        log.info("Autosave skipped: Jill wasn't free to move for 30 s (menu, "
+                                 "pickup, door or scene). It saves in the next save room.")
+                    else:
+                        log.warning("Autosave didn't finish in time.")
                     self.notices.append("Autosave didn't happen - save at a typewriter to be safe.")
                 return
             self.as_deadline = None
             if result == 0:
                 log.info("Autosaved to slot %d.", self.autosave_slot + 1)
+                if not self.state.autosave_made:
+                    self.state.autosave_made = True
+                    self.state_file.save(self.state)
                 self.notices.append(f"Autosaved (slot {self.autosave_slot + 1}).")
             else:
                 log.warning("Autosave failed: the game reported error %d.", result)
@@ -1144,11 +1515,114 @@ class GameBridge:
                              and now - self.last_load_time > 10)
             self.as_room, self.as_since = room, now
         if (self.as_armed and room in SAVE_ROOMS and present and now - self.as_since >= 2.0
-                and saver.game_idle()):
+                and saver.game_idle() and self.cur_inv and not self._menu_open(self.cur_inv)):
             self.as_armed = False
             saver.request(self.autosave_slot)
             self.as_deadline = now + 30
             log.info("Autosaving in %s...", SAVE_ROOMS[room])
+
+    # ------------------------------------------------------- random start room
+    def _start_room_tick(self, room: Optional[int], bits: Dict[str, bool]):
+        """random_start_room (2026-11-15): on a new game (Main Hall, nothing picked up yet, the
+        random starting inventory already given) move Jill to the seed's start room once. The jump
+        stub fires the first frame the game checks door triggers (~10 s into a new game)."""
+        if not self.start_room or self.state.start_room_done:
+            return
+        now = time.time()
+        if self.start_jump_armed_at is not None:
+            if self.jumper is None or self.jumper_pid != getattr(self.conn, "pid", None):
+                self.start_jump_armed_at = None      # the game restarted: arm again below
+                return
+            if self.jumper.flag() == JUMPED and room == self.start_room:
+                self.state.start_room_done = True
+                self.state_file.save(self.state)
+                self.start_jump_armed_at = None
+                self.jumper.cancel()
+                log.info("Start room: Jill is in %s (%#x).", self.start_room_name, room)
+                self.notices.append(f"Your start room: {self.start_room_name}.")
+                # autosave there straight away, so a death comes back to the start room
+                self.as_room, self.as_armed, self.as_since = room, True, now
+            elif room != START_ROOM_NUMBER and self.jumper.flag() != JUMPED:
+                # left the Main Hall before the jump fired (shouldn't happen: doors are triggers)
+                self.jumper.cancel()
+                self.start_jump_armed_at = None
+                log.warning("Start room: Jill left the Main Hall before the jump - not moving her.")
+            return
+        if room != START_ROOM_NUMBER or any(bits.values()):
+            return
+        if self.random_start and not self.state.start_swapped:
+            return                                   # the starting inventory first
+        pid = getattr(self.conn, "pid", None)
+        try:
+            if self.jumper is None or self.jumper_pid != pid:
+                jumper = self.jumper_factory(self.conn, log)
+                jumper.install()
+                self.jumper, self.jumper_pid = jumper, pid
+            if not self.jumper.arm(self.start_room):
+                log.warning("Start room: no arrival spot known for %#x - staying in the Main Hall.", self.start_room)
+                self.start_room = 0
+                return
+        except ProcessError as exc:
+            log.warning("Start room: the room jump couldn't be set up (%s) - staying in the Main Hall.", exc)
+            self.notices.append("The start room jump didn't work - see the client log.")
+            self.start_room = 0
+            return
+        self.start_jump_armed_at = now
+        log.info("Start room: moving Jill to %s (%#x) as soon as she can move.", self.start_room_name,
+                 self.start_room)
+
+    # ------------------------------------------------------- autoload after a death
+    def autoload_status(self) -> str:
+        if self.autosave_slot is None:
+            return "Autoload after death: off (it needs the autosave option, which is off in this seed)."
+        where = "set with /autoload" if self.state.autoload_choice is not None else "from your YAML"
+        if not self.autoload:
+            return f"Autoload after death: OFF ({where}). Turn it on with /autoload on."
+        made = "" if self.state.autosave_made else " It starts working after your first autosave in this seed."
+        return (f"Autoload after death: ON ({where}) - after a death, slot {self.autosave_slot + 1} "
+                f"loads by itself from the title screen menu.{made}")
+
+    def set_autoload(self, on: bool) -> str:
+        if self.autosave_slot is None:
+            return self.autoload_status()
+        self.autoload = on
+        self.state.autoload_choice = on
+        self.state_file.save(self.state)
+        if not on and self.autoloader is not None:
+            self.autoloader.disarm("turned off with /autoload off")
+        return self.autoload_status()
+
+    def _arm_autoload(self):
+        if not self.autoload or self.autosave_slot is None:
+            return
+        if not self.state.autosave_made:
+            log.info("Autoload: no autosave made in this seed yet - load your save yourself.")
+            self.notices.append("No autosave yet in this seed - load your save yourself.")
+            return
+        pid = getattr(self.conn, "pid", None)
+        if self.autoloader is None or self.autoloader_pid != pid:
+            shift = self.conn.module_base - hv.DEFAULT_IMAGE_BASE
+            self.autoloader = AutoLoader(self.conn, shift, self.autosave_slot, log)
+            self.autoloader_pid = pid
+        self.autoloader.slot = self.autosave_slot
+        self.autoloader.arm()
+
+    def _autoload_tick(self):
+        if self.autoloader is None or not self.autoloader.armed:
+            return
+        if self.autoloader_pid != getattr(self.conn, "pid", None):
+            self.autoloader.disarm("the game restarted")
+            return
+        try:
+            notice = self.autoloader.tick()
+        except ProcessError:
+            raise
+        except Exception as exc:                 # never let autoload break the client
+            log.warning("Autoload stopped: %s", exc)
+            self.autoloader.disarm()
+            notice = "Autoload didn't work - load your save yourself."
+        if notice:
+            self.notices.append(notice)
 
     def sort_box(self, why: str = "") -> str:
         """Sort the item box (see box_sort.py). Only while Jill is in the game, with the inventory
@@ -1219,6 +1693,7 @@ class GameBridge:
         if room != self.box_room_seen:
             self.box_room_seen = room
             self.box_sort_due = now + 0.3 if self.box_auto_sort else None
+            self._sort_wait_said = None
             if self.state.box_unseen:
                 self.notices.append("In the item box: " + box_summary(self.state.box_unseen))
                 self.state.box_unseen = []
@@ -1228,7 +1703,9 @@ class GameBridge:
             if answer in ("Item box sorted.", "The item box is already sorted."):
                 self.box_sort_due = None
             else:
-                log.debug("Auto sort waiting: %s", answer)
+                if answer != getattr(self, "_sort_wait_said", None):   # once per reason, not every retry
+                    log.debug("Auto sort waiting: %s", answer)
+                    self._sort_wait_said = answer
                 self.box_sort_due = now + 0.5
 
     def _game_button_down(self, name: Optional[str]) -> bool:
@@ -1319,6 +1796,32 @@ class GameBridge:
         self.as_deadline = time.time() + 30
         return f"Saving to slot {self.autosave_slot + 1}..."
 
+    def unstick(self) -> str:
+        """/unstick (TEST, 2026-11-14): a save made while a "take it?" prompt was up loads with the
+        game still thinking a menu is open - camera stuck, no inventory, no item box, and the
+        client's menu check (inventory +0x2C bit 0x1000 / +0x34) says open. This puts those two
+        fields to their closed values (32-style flags without 0x1000, screen 0; equip watch
+        2026-11-11) and logs before/after, so the log shows whether that was all of it."""
+        inv = self.cur_inv
+        if not inv or self.conn is None:
+            return "The game isn't running."
+        if not self._jill_present():
+            return "Load the stuck save first (Jill must be in the room)."
+        if self._box_ui_open():
+            return "The item box screen is open - close it first."
+        flags, screen = struct.unpack("<ii", self.conn.read_bytes(inv + MENU_FLAGS, 4)
+                                      + self.conn.read_bytes(inv + MENU_SCREEN, 4))
+        log.info("Unstick: before - menu flags %#x, menu screen %d.", flags, screen)
+        if not flags & 0x1000 and screen == 0:
+            return "No stuck menu found (menu flags and screen are already closed). Send the client log."
+        self.conn.write_bytes(inv + MENU_FLAGS, struct.pack("<i", flags & ~0x1000))
+        self.conn.write_bytes(inv + MENU_SCREEN, struct.pack("<i", 0))
+        after = struct.unpack("<ii", self.conn.read_bytes(inv + MENU_FLAGS, 4)
+                              + self.conn.read_bytes(inv + MENU_SCREEN, 4))
+        log.info("Unstick: after - menu flags %#x, menu screen %d.", *after)
+        return ("Menu state reset. Try the inventory and walking about. If it works, save at a "
+                "typewriter. If not, send the client log.")
+
     def _menu_open(self, inv: int) -> bool:
         menu = struct.unpack("<ii", self.conn.read_bytes(inv + MENU_FLAGS, 4) + self.conn.read_bytes(inv + MENU_SCREEN, 4))
         return bool(menu[0] & 0x1000 or menu[1] != 0) or self._box_ui_open()
@@ -1329,7 +1832,7 @@ class GameBridge:
         if item.trap == WRONG_DOOR:
             if not self._jill_present() or self.current_room is None or not self.save_known_ours:
                 return False
-            if self.wrong_door.active or self.shortcut.s:
+            if self.wrong_door.active or self.shortcut.s or self.shortcut_jump is not None:
                 return False                          # one at a time: wait for this one to finish
             if not self.wrong_door.start(self.current_room, sender, self.room_entries_on, self.rng):
                 return False                          # she's in the Cell itself: wait until she leaves
@@ -1677,7 +2180,9 @@ class GameBridge:
                       "tag": delivery_tag(item)}
         self.state_file.save(st)
         try:
-            direct = item.starting or item.game_id in DIRECT_INVENTORY_ITEMS
+            # Boss Rush: the Signal Rockets come after the Lab Tyrant, on the way out - no item box
+            direct = (item.starting or item.game_id in DIRECT_INVENTORY_ITEMS
+                      or (self.boss_rush and item.game_id == SIGNAL_ROCKETS_ID))
             if self.destination == INVENTORY_THEN_BOX or direct:
                 try:
                     d = deliver_to_inventory(self.conn, inv, item.game_id, qty, self.journal,

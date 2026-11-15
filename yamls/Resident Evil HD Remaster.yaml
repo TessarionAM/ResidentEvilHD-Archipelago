@@ -34,6 +34,14 @@ Resident Evil HD Remaster:
   # Default: complete_game
   goal: complete_game
 
+  # Boss Rush: the Signal Rockets are locked behind the seven bosses (Crypt Crimson Head, Plant 42,
+  # Yawn in the Library, Black Tiger, Neptune, Lisa Trevor at the Altar, the Lab Tyrant). When all
+  # seven are dead the rockets go straight into Jill's inventory. Defeat the other six before the
+  # Lab Tyrant: after it the Laboratory self-destructs. Only with goal complete_game.
+  # EXPERIMENTAL: the boss flags still need a second confirmation, so keep a spare save.
+  # Default: false
+  boss_rush: false
+
   # ---------------------------------------------------------------------------------------------
   # Locations
   # Every item pickup is always a location. These options add more.
@@ -74,6 +82,14 @@ Resident Evil HD Remaster:
   # With random_starting_inventory, one of the two starting items is always a gun.
   # Default: true
   random_start_guaranteed_gun: true
+
+  # EXPERIMENTAL. Start in a random save room instead of the Main Hall. A new game begins in the
+  # Main Hall; about ten seconds in, the client moves Jill to the start room. The intro replays the
+  # first time you walk back into the Main Hall.
+  # off | mansion_save_rooms (Dining Room, East Wing Storeroom)
+  #     | save_rooms (also the Mining Area, Cabin and Residence Storeroom)
+  # Default: off
+  random_start_room: off
 
   # Percentage of the remaining filler items replaced by special items. 0 to 100.
   # Default: 0
@@ -149,8 +165,8 @@ Resident Evil HD Remaster:
   # Default: lb_l1
   item_box_button: lb_l1
 
-  # Shortcut buttons on the client's Key Map: the next door Jill goes through leads to the Main
-  # Hall, the Garden Shed or the Laboratory Entrance. Each unlocks once that room has been visited.
+  # Shortcut buttons on the client's Key Map, one for each typewriter room: the next door Jill goes
+  # through leads to that room. Each unlocks once that room has been visited.
   # Default: true
   key_map_shortcuts: true
 
@@ -166,6 +182,11 @@ Resident Evil HD Remaster:
   # The save slot used by autosave (1 to 8). Do not save to this slot manually.
   # Default: 8
   autosave_slot: 8
+
+  # EXPERIMENTAL. Needs autosave. After Jill dies, the client loads your autosave slot by itself
+  # once the title screen's menu is up. Only after the client has autosaved once in this seed.
+  # Default: false
+  autoload_after_death: false
 
   # Run the game borderless fullscreen so Archipelago messages appear over it. Set the game itself
   # to windowed mode.

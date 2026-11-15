@@ -1,8 +1,10 @@
 """Offline tests for the Wrong Door Trap (client/wrong_door.py) with a fake game memory."""
+import unittest
 import struct
 
 from ..client import hd_versions as hv
 from ..client import wrong_door as wdm
+from ..client.door_data import DOOR_PAIRS
 from ..client.game_bridge import Incoming
 from ..game_data import DETECTED_PICKUPS, room_visited_flag
 from .test_client import FLAGS, BridgeTest
@@ -14,9 +16,21 @@ INFO = 0x60000
 INFO_VT = 0x00ABCD00
 
 
+class _NoJump:
+    """No room jump stub in these tests: shortcuts fall back to the door way (client/shortcuts.py)."""
+    def __init__(self, conn, log=None):
+        pass
+
+    def install(self):
+        from ..client.pc_process import ProcessError
+        raise ProcessError("no room jump in this test")
+
+
 class WrongDoorTest(BridgeTest):
     def setUp(self):
         super().setUp()
+        from ..client import game_bridge as gb
+        self._jumper_factory, gb.RoomJumper = gb.RoomJumper, _NoJump
         self._settle, wdm.SETTLE = wdm.SETTLE, 0.0
         self._bg, wdm.BACKGROUND = wdm.BACKGROUND, False
         self._lock, wdm.CELL_LOCK_SECONDS = wdm.CELL_LOCK_SECONDS, 0.0
@@ -36,6 +50,8 @@ class WrongDoorTest(BridgeTest):
         self.set_doors([0x105, 0x107])
 
     def tearDown(self):
+        from ..client import game_bridge as gb
+        gb.RoomJumper = self._jumper_factory
         wdm.SETTLE = self._settle
         wdm.BACKGROUND = self._bg
         wdm.CELL_LOCK_SECONDS = self._lock
@@ -203,24 +219,24 @@ class ShortcutTest(WrongDoorTest):
         self.set_room(0x10F)
         self.set_doors([0x103])
         b.tick([])
-        off, bit = room_visited_flag(0x106)
+        off, bit = room_visited_flag(0x105)
         self.game.mem[FLAGS + off] &= ~(1 << bit) & 0xFF
         b.tick([])
-        self.assertIn("Visit the Main Hall first", b.request_shortcut("Main Hall"))
-        self.visit(0x106)
+        self.assertIn("Visit the Dining Room first", b.request_shortcut("Dining Room"))
+        self.visit(0x105)
         b.tick([])
-        self.assertIn("Main Hall", b.shortcuts_unlocked)
-        self.assertIn("next door", b.request_shortcut("Main Hall"))
+        self.assertIn("Dining Room", b.shortcuts_unlocked)
+        self.assertIn("next door", b.request_shortcut("Dining Room"))
         b.tick([])
         b.tick([])
-        self.assertEqual(self.info_dest((0x10F, 0x103)), 0x106)     # table entry first
-        self.assertEqual(self.rec(0), (0x106, 0x83))                 # then the door; lock untouched
-        self.assertEqual(b.shortcut.target_name, "Main Hall")
-        # she goes through: Main Hall
-        self.set_room(0x106)
-        self.set_doors([0x105, 0x107])
+        self.assertEqual(self.info_dest((0x10F, 0x103)), 0x105)     # table entry first
+        self.assertEqual(self.rec(0), (0x105, 0x83))                 # then the door; lock untouched
+        self.assertEqual(b.shortcut.target_name, "Dining Room")
+        # she goes through: Dining Room
+        self.set_room(0x105)
+        self.set_doors([0x103, 0x106])
         b.tick([])
-        self.assertTrue(any("Shortcut: Main Hall" in (n[0] if isinstance(n, tuple) else n) for n in b.notices))
+        self.assertTrue(any("Shortcut: Dining Room" in (n[0] if isinstance(n, tuple) else n) for n in b.notices))
         b.tick([])
         self.assertEqual(self.info_dest((0x10F, 0x103)), 0x103)     # put back
         self.assertEqual(b.shortcut.s, {})
@@ -230,15 +246,15 @@ class ShortcutTest(WrongDoorTest):
         b = self.bridge()
         self.set_room(0x10F)
         self.set_doors([0x103])
-        self.visit(0x106)
+        self.visit(0x105)
         b.tick([])
-        self.assertIn("off in your YAML", b.request_shortcut("Main Hall"))
+        self.assertIn("off in your YAML", b.request_shortcut("Dining Room"))
         b.shortcuts_on = True
-        b.request_shortcut("Main Hall")
+        b.request_shortcut("Dining Room")
         b.tick([])
         b.tick([])
-        self.assertEqual(self.info_dest((0x10F, 0x103)), 0x106)
-        self.assertIn("cancelled", b.request_shortcut("Main Hall"))
+        self.assertEqual(self.info_dest((0x10F, 0x103)), 0x105)
+        self.assertIn("cancelled", b.request_shortcut("Dining Room"))
         self.assertEqual(self.info_dest((0x10F, 0x103)), 0x103)
         self.assertEqual(b.shortcut.s, {})
 
@@ -247,9 +263,9 @@ class ShortcutTest(WrongDoorTest):
         b.shortcuts_on = True
         self.set_room(0x10F)
         self.set_doors([0x103])
-        self.visit(0x106)
+        self.visit(0x105)
         b.tick([])
-        b.request_shortcut("Main Hall")
+        b.request_shortcut("Dining Room")
         trap = Incoming(-1, None, "Wrong Door Trap from Friend", trap="Wrong Door Trap")
         self.assertFalse(b._apply_trap(trap))
 
@@ -403,13 +419,368 @@ class StaleMemoryTest(DoorShuffleClientTest):
         b.shortcuts_on = True
         self.set_room(0x10F)
         self.set_doors([0x103])
-        off, bit = room_visited_flag(0x106)
+        off, bit = room_visited_flag(0x105)
         self.game.mem[FLAGS + off] |= 1 << bit
         b.tick([])
-        b.request_shortcut("Main Hall")
+        b.request_shortcut("Dining Room")
         b.tick([])
         b.tick([])
-        self.assertEqual(self.rec(0), (0x106, 0x83))
-        self.assertIn("cancelled", b.request_shortcut("Main Hall"))
+        self.assertEqual(self.rec(0), (0x105, 0x83))
+        self.assertIn("cancelled", b.request_shortcut("Dining Room"))
         self.assertEqual(self.rec(0), (0x103, 0x83))                 # the door, not just the table
         self.assertEqual(self.info_dest((0x10F, 0x103)), 0x103)
+
+
+class GameObjectFreedTest(StaleMemoryTest):
+    """2026-11-14 (TessarionAM's log 00:56): after a death + reload the old game object was freed.
+    The rescan kept its address, "found" it every 30 s and shortcuts never worked again."""
+
+    def test_freed_game_object_is_replaced_on_rescan(self):
+        b = self.bridge()
+        b.set_door_shuffle(self.LAYOUT)
+        b.tick([])
+        b.tick([])
+        self.assertEqual(b.wrong_door.game, GAME)
+        # death + reload: the old object is gone (vtable overwritten), a new one is in use
+        struct.pack_into("<I", self.game.mem, GAME, 0)
+        self.set_doors2([0x105, 0x107])
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(b.wrong_door.game, self.GAME2)
+        self.assertEqual(self.rec2(0), 0x10F)               # and the doors are shuffled again
+
+
+class TypewriterShortcutTableTest(unittest.TestCase):
+    """2026-11-14: one shortcut per typewriter room."""
+
+    def test_every_save_room_has_a_working_shortcut(self):
+        from ..client.autosave import SAVE_ROOMS
+        from ..client.shortcuts import LABELS, ORDER, SHORTCUTS
+        self.assertEqual({room for room, _f in SHORTCUTS.values()}, set(SAVE_ROOMS))
+        self.assertEqual(set(ORDER), set(SHORTCUTS))
+        for name, (room, came_from) in SHORTCUTS.items():
+            self.assertIsNotNone(wdm.arrival(room, came_from), name)          # a real arrival spot
+            self.assertIn(came_from, DOOR_PAIRS[room], name)                 # a real door
+            self.assertIsNotNone(room_visited_flag(room), name)              # it can unlock
+            self.assertLessEqual(len(LABELS.get(name, name)), 14, name)      # fits a Key Map button
+
+
+class DoorknobTest(WrongDoorTest):
+    """2026-11-15 (test 06): the East Wing Stairway <-> Dark Corridor doorknob is put back as new
+    the moment it breaks (+0x23A bit 0), with its two use counters (+0x248 bits 3 and 4)."""
+
+    def test_second_trip_is_uncounted(self):
+        b = self.bridge()
+        self.set_room(0x10A)                                    # Jill is in the Dark Corridor
+        self.game.mem[FLAGS + 0x248] = 0x18 | 0x01            # both trips counted (+ an unrelated bit)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.mem[FLAGS + 0x248], 0x08 | 0x01)    # back to "one trip"
+
+    def test_first_trip_alone_is_left_alone(self):
+        b = self.bridge()
+        self.game.mem[FLAGS + 0x248] = 0x08
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.mem[FLAGS + 0x248], 0x08)
+
+    def test_already_broken_save_is_mended(self):
+        b = self.bridge()
+        self.set_room(0x207)
+        self.game.mem[FLAGS + 0x248] = 0x18
+        self.game.mem[FLAGS + 0x23A] = 0x01 | 0x40            # broken (+ an unrelated bit)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.mem[FLAGS + 0x23A], 0x40)
+        self.assertEqual(self.game.mem[FLAGS + 0x248], 0x08)
+
+    def test_lift_byte_next_door_untouched(self):
+        b = self.bridge()
+        self.set_room(0x106)
+        self.game.mem[FLAGS + 0x249] = 0x06
+        self.game.mem[FLAGS + 0x23A] = 0x01
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.mem[FLAGS + 0x249], 0x06)
+
+
+class CourtyardLiftTest(WrongDoorTest):
+    """Courtyard lifts follow Jill's floor (2026-11-14), set for the room she's GOING to, and only
+    once each lift works in the game (2026-11-15)."""
+
+    def lifts(self):
+        from ..client.game_bridge import LIFT_FLAGS_BYTE
+        return self.game.mem[FLAGS + LIFT_FLAGS_BYTE]
+
+    def working(self, pool=True, battery=True):
+        from ..client.game_bridge import (BATTERY_IN_BIT, BATTERY_IN_BYTE, POOL_DRAINED_BIT,
+                                          POOL_DRAINED_BYTE)
+        if pool:
+            self.game.mem[FLAGS + POOL_DRAINED_BYTE] |= POOL_DRAINED_BIT
+        if battery:
+            self.game.mem[FLAGS + BATTERY_IN_BYTE] |= BATTERY_IN_BIT
+
+    def target(self, number):
+        struct.pack_into("<ii", self.game.mem, FLAGS + hv.DOOR_TARGET_ROOM_OFFSET, number >> 8, number & 0xFF)
+
+    def test_upper_floor_brings_both_lifts_up(self):
+        from ..client.game_bridge import LIFT_FLAGS_BYTE
+        self.working()
+        b = self.bridge()
+        self.game.mem[FLAGS + LIFT_FLAGS_BYTE] = 0x01 | 0x02          # pool lift down, other bit kept
+        self.set_room(0x11B)                                           # Garden Shed
+        self.target(0x11B)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x01 | 0x04)                    # pool lift up, Battery lift up
+
+    def test_lower_floor_brings_both_lifts_down(self):
+        self.working()
+        b = self.bridge()
+        self.set_room(0x304)                                           # Zigzag Path
+        self.game.mem[FLAGS + 0x249] = 0x04 | 0x80
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x02 | 0x80)
+
+    def test_set_for_the_room_she_is_going_to(self):
+        """TessarionAM 2026-11-15: pool lift down from the Water Pool -> the Falls Area loaded with the
+        Battery lift still at the top. The target room changes before the room loads."""
+        self.working()
+        b = self.bridge()
+        self.set_room(0x301)                                           # Water Pool (top)
+        self.target(0x301)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x04)
+        self.target(0x302)                                             # riding down to the Falls Area
+        b.tick([])
+        self.assertEqual(self.lifts(), 0x02)                           # both lifts at the bottom already
+
+    def test_written_once_per_change(self):
+        self.working()
+        b = self.bridge()
+        self.set_room(0x300)
+        self.target(0x300)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x04)
+        self.game.mem[FLAGS + 0x249] = 0x00                           # a ride changes it itself
+        b.tick([])
+        b.tick([])
+        self.assertEqual(self.lifts(), 0x00)                           # not written back while nothing changed
+
+    def test_a_lift_that_does_not_work_yet_is_left_alone(self):
+        """The pool lift moved down before the pool was drained let Jill ride up without the crank."""
+        b = self.bridge()
+        self.set_room(0x304)
+        self.game.mem[FLAGS + 0x249] = 0x04                            # vanilla: pool lift up, Battery lift up
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x04)                           # neither works yet: untouched
+        self.working(pool=False, battery=True)
+        self.set_room(0x302)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x00)                           # only the Battery lift came down
+
+    def test_other_rooms_untouched(self):
+        self.working()
+        b = self.bridge()
+        self.set_room(0x106)
+        self.game.mem[FLAGS + 0x249] = 0x02
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.lifts(), 0x02)
+
+
+class GateOpenForFarStartTest(WrongDoorTest):
+    """Random start beyond the Stone & Metal gate (TessarionAM, 2026-11-15 19:15): the client puts the
+    object in the gate from the start; a copy taken from it is taken away again."""
+
+    def test_open_from_the_start(self):
+        b = self.bridge()
+        b.gate_open = True
+        for _ in range(3):
+            b.tick([])
+        self.assertTrue(self.game.mem[FLAGS + 0x22D] & 0x08)
+        self.assertFalse(self.game.mem[FLAGS + 0x304] & 0x01)          # never the crash bit
+
+    def test_copy_taken_from_it_is_removed(self):
+        b = self.bridge()
+        b.gate_open = True
+        self.set_room(0x11A)
+        for _ in range(3):
+            b.tick([])
+        self.game.mem[FLAGS + 0x22D] &= ~0x08 & 0xFF                   # the drawn object is taken...
+        self.game.mem[FLAGS + 0x304] |= 0x01
+        b.tick([])
+        self.game.set_slot(3, 53, 1)                                   # ...and lands in the inventory
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.slot(3), (0, 0))                     # the copy is gone
+        self.assertTrue(self.game.mem[FLAGS + 0x22D] & 0x08)           # and the gate is open again
+
+    def test_off_by_default(self):
+        b = self.bridge()
+        for _ in range(3):
+            b.tick([])
+        self.assertFalse(self.game.mem[FLAGS + 0x22D] & 0x08)
+
+
+class BossRushTest(WrongDoorTest):
+    """2026-11-14: the Boss Rush check is sent once every boss's kill bit is on."""
+
+    def test_sent_only_when_all_seven_are_dead(self):
+        from ..data import BOSSES, BOSS_RUSH_LOCATION
+        b = self.bridge()
+        b.boss_rush = True
+        for _ in range(3):
+            self.assertNotIn(BOSS_RUSH_LOCATION, b.tick([]) or set())
+        for i, (_name, _room, (off, bit), _req) in enumerate(BOSSES):
+            self.game.mem[FLAGS + off] |= 1 << bit
+            got = b.tick([]) or set()
+            self.assertEqual(BOSS_RUSH_LOCATION in got, i == len(BOSSES) - 1)
+        self.assertTrue(all(line.endswith("dead") for line in b.bosses_status()))
+
+    def test_off_by_default(self):
+        from ..data import BOSSES, BOSS_RUSH_LOCATION
+        b = self.bridge()
+        for _name, _room, (off, bit), _req in BOSSES:
+            self.game.mem[FLAGS + off] |= 1 << bit
+        for _ in range(3):
+            self.assertNotIn(BOSS_RUSH_LOCATION, b.tick([]) or set())
+
+    def test_main_lab_warning(self):
+        b = self.bridge()
+        b.boss_rush = True
+        self.set_room(0x513)
+        for _ in range(3):
+            b.tick([])
+        self.assertTrue(any("self-destructs" in (n[0] if isinstance(n, tuple) else n) for n in b.notices))
+
+
+class StoneMetalGateTest(WrongDoorTest):
+    """2026-11-14 (test 07): the Roofed Passage gate is kept open once the object was received or
+    taken back; an object picked up from a gate the client opened is taken away again."""
+
+    def gate(self):
+        return bool(self.game.mem[FLAGS + 0x22D] & 0x08)
+
+    def test_received_object_opens_the_gate(self):
+        b = self.bridge()
+        b.state.delivered = 1
+        rec = [Incoming(0, 53, "Stone & Metal Object")]
+        for _ in range(3):
+            b.tick(rec)
+        self.assertTrue(self.gate())
+        self.assertFalse(self.game.mem[FLAGS + 0x304] & 0x01)          # never the crash bit
+
+    def test_closed_without_the_object(self):
+        b = self.bridge()
+        for _ in range(3):
+            b.tick([])
+        self.assertFalse(self.gate())
+
+    def test_take_back_keeps_it_open(self):
+        b = self.bridge()
+        self.game.mem[FLAGS + 0x304] |= 0x01                           # taken back for the Altar
+        for _ in range(3):
+            b.tick([])
+        self.assertTrue(self.gate())
+
+    def test_copy_from_a_client_opened_gate_is_taken_away(self):
+        b = self.bridge()
+        self.set_room(0x11A)
+        b.state.delivered = 1
+        rec = [Incoming(0, 53, "Stone & Metal Object")]
+        for _ in range(3):
+            b.tick(rec)
+        self.assertTrue(self.gate())
+        self.game.mem[FLAGS + 0x22D] &= ~0x08 & 0xFF                   # the drawn object is taken...
+        self.game.mem[FLAGS + 0x304] |= 0x01
+        b.tick(rec)
+        self.game.set_slot(3, 53, 1)                                   # ...and lands in the inventory
+        for _ in range(3):
+            b.tick(rec)
+        self.assertEqual(self.game.slot(3), (0, 0))
+        self.assertTrue(self.gate())
+
+    def test_players_own_object_is_theirs_to_take(self):
+        b = self.bridge()
+        self.set_room(0x11A)
+        self.game.mem[FLAGS + 0x22D] |= 0x08                            # the player put it in
+        self.game.mem[FLAGS + 0x326] |= 0x02
+        for _ in range(3):
+            b.tick([])
+        self.game.mem[FLAGS + 0x22D] &= ~0x08 & 0xFF                   # and takes it back for the Altar
+        self.game.mem[FLAGS + 0x326] &= ~0x02 & 0xFF
+        self.game.mem[FLAGS + 0x304] |= 0x01
+        b.tick([])
+        self.game.set_slot(3, 53, 1)
+        for _ in range(3):
+            b.tick([])
+        self.assertEqual(self.game.slot(3), (53, 1))                   # kept
+        self.assertTrue(self.gate())                                   # and the gate stays open
+
+
+class RoomLockLogTest(WrongDoorTest):
+    """2026-11-14: locked door sides are logged once per room entry, with their flag's state."""
+
+    def test_locks_logged_once(self):
+        b = self.bridge()
+        self.set_room(0x10B)
+        self.set_doors([0x117])
+        struct.pack_into("<i", self.game.mem, RECS + 0x44, 39)
+        self.game.mem[RECS + 0x43] = 22
+        b.room_since = 0.0
+        with self.assertLogs("RE1HDClient", "INFO") as cm:
+            for _ in range(4):
+                b.tick([])
+                b.room_since = 0.0
+        lines = [l for l in cm.output if "Locks in 0x10b" in l]
+        self.assertEqual(len(lines), 1)
+        self.assertIn("->0x117 type 22 flag 39 locked", lines[0])
+
+
+class InstantShortcutTest(WrongDoorTest):
+    """2026-11-15 (TessarionAM): shortcuts are instant, like the random start room (room jump)."""
+
+    def setUp(self):
+        super().setUp()
+        from .test_client import FakeJumper
+        from ..client import game_bridge as gb
+        gb.RoomJumper = FakeJumper
+        self.game.pid = 99
+
+    def unlocked(self, b, name="Dining Room"):
+        b.shortcuts_on = True
+        b.shortcuts_unlocked = frozenset({name})
+
+    def test_jump_then_arrival(self):
+        from .test_client import FakeJumper
+        b = self.bridge()
+        b.tick([])
+        self.set_room(0x107)
+        b.tick([])
+        self.unlocked(b)
+        msg = b.request_shortcut("Dining Room")
+        self.assertIn("taking Jill to the Dining Room", msg)
+        self.assertEqual(FakeJumper.last.armed, [0x105])
+        self.assertIsNone(b.shortcut.target_name)                    # no door was changed
+        FakeJumper.last.state = 2                                     # the stub fired
+        self.set_room(0x105)
+        b.tick([])
+        self.assertIsNone(b.shortcut_jump)
+
+    def test_pressed_again_cancels(self):
+        from .test_client import FakeJumper
+        b = self.bridge()
+        b.tick([])
+        self.set_room(0x107)
+        b.tick([])
+        self.unlocked(b)
+        b.request_shortcut("Dining Room")
+        self.assertIn("cancelled", b.request_shortcut("Dining Room"))
+        self.assertEqual(FakeJumper.last.state, 0)
+        self.assertIsNone(b.shortcut_jump)

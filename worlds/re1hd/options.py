@@ -36,6 +36,15 @@ class Goal(Choice):
     default = 1
 
 
+class BossRush(Toggle):
+    """EXPERIMENTAL. The Signal Rockets are locked behind the seven bosses: the Crypt Crimson Head,
+    Plant 42, Yawn (Library), Black Tiger, Neptune, Lisa Trevor (Altar) and the Tyrant (Lab).
+    When all seven are dead the Signal Rockets go straight into Jill's inventory. Defeat the
+    other six before the Lab Tyrant: after it the Laboratory self-destructs and there's no way
+    back. Only with goal complete_game."""
+    display_name = "Boss Rush"
+
+
 class ItemPickups(DefaultOnToggle):
     """Every item pickup is a location. Always on."""
     visibility = Visibility.none     # no effect: pickups are always locations
@@ -109,6 +118,20 @@ class RandomStartGuaranteedGun(DefaultOnToggle):
     """When random_starting_inventory is on, one of the two starting items is always a gun
     (Handgun, Shotgun, Grenade Launcher or Magnum)."""
     display_name = "Random Start: Guaranteed Gun"
+
+
+class RandomStartRoom(Choice):
+    """EXPERIMENTAL. Start a new game in a random save room instead of the Main Hall. A new game
+    begins in the Main Hall as usual; about ten seconds in, the client moves Jill to the start room.
+    The intro replays the first time you walk back into the Main Hall.
+    mansion_save_rooms: the Dining Room or the East Wing Storeroom.
+    save_rooms: also the Mining Area, the Cabin or the Residence Storeroom.
+    Seeds are only made with a start room they can be finished from."""
+    display_name = "Random Start Room"
+    option_off = 0
+    option_mansion_save_rooms = 1
+    option_save_rooms = 2
+    default = 0
 
 
 class TrapPercentage(Range):
@@ -317,8 +340,8 @@ class ItemBoxAutoSort(DefaultOnToggle):
 
 
 class KeyMapShortcuts(DefaultOnToggle):
-    """Shortcut buttons on the client's Key Map. The next door Jill goes through leads to the
-    Main Hall, the Garden Shed or the Laboratory Entrance. Each unlocks once that room has been visited."""
+    """Shortcut buttons on the client's Key Map, one for each typewriter room. The next door Jill
+    goes through leads to that room. Each unlocks once that room has been visited."""
     display_name = "Key Map Shortcuts"
 
 
@@ -382,6 +405,13 @@ class AutosaveSlot(Range):
     default = 8
 
 
+class AutoloadAfterDeath(Toggle):
+    """EXPERIMENTAL. Needs Autosave. After Jill dies, the client loads your autosave slot by itself as
+    soon as the title screen's menu is up, putting you back in the last save room you walked into.
+    Only after the client has autosaved at least once in this seed."""
+    display_name = "Autoload After Death"
+
+
 class DeathLinkEffect(Choice):
     """What happens to Jill when a Death Link is received.
     kill: Jill dies.
@@ -397,6 +427,7 @@ class RE1HDOptions(PerGameCommonOptions):
     character: Character
     difficulty: Difficulty
     goal: Goal
+    boss_rush: BossRush
     item_pickups: ItemPickups
     only_detected_pickups: OnlyDetectedPickups
     map_checks: MapChecks
@@ -408,6 +439,7 @@ class RE1HDOptions(PerGameCommonOptions):
     start_with_sword_key: StartWithSwordKey
     random_starting_inventory: RandomStartingInventory
     random_start_guaranteed_gun: RandomStartGuaranteedGun
+    random_start_room: RandomStartRoom
     trap_percentage: TrapPercentage
     damage_trap_weight: DamageTrapWeight
     poison_trap_weight: PoisonTrapWeight
@@ -441,6 +473,7 @@ class RE1HDOptions(PerGameCommonOptions):
     borderless_fullscreen: BorderlessFullscreen
     autosave: Autosave
     autosave_slot: AutosaveSlot
+    autoload_after_death: AutoloadAfterDeath
 
 
 # Planned check types (hidden options; the world warns if a YAML turns them on).
@@ -449,15 +482,15 @@ NOT_YET_IMPLEMENTED = ("boss_defeats", "enemy_checks")
 
 # Order of the options on the website and in generated templates.
 OPTION_GROUPS = [
-    OptionGroup("Victory Conditions", [Goal]),
+    OptionGroup("Victory Conditions", [Goal, BossRush]),
     OptionGroup("Features", [MapChecks, FirstRoomEntries, FilesAndNotes,
                              ReceivedItemDestination, StartWithSwordKey, RandomStartingInventory,
-                             RandomStartGuaranteedGun, DoorLockRandomisation, LockedDoorCount,
+                             RandomStartGuaranteedGun, RandomStartRoom, DoorLockRandomisation, LockedDoorCount,
                              DoorRandomisation,
                              SpecialItemPercentage, InfiniteAmmoWeight, DefenceBundleWeight,
                              DeathLink, DeathLinkEffect]),
     OptionGroup("Quality of Life", [ItemBoxAutoSort, ItemBoxAnywhere, ItemBoxButton, KeyMapShortcuts,
-                                    DoorSkip, Autosave, AutosaveSlot, BorderlessFullscreen,
+                                    DoorSkip, Autosave, AutosaveSlot, AutoloadAfterDeath, BorderlessFullscreen,
                                     GameResolution]),
     OptionGroup("Traps", [TrapPercentage, DamageTrapWeight, PoisonTrapWeight, CriticalDamageTrapWeight,
                           AmmoLeakTrapWeight, DamageTrapAmount, DamageTrapCanKill, FunTrapPercentage,

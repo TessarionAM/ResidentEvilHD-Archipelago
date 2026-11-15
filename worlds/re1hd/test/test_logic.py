@@ -93,13 +93,19 @@ class TestOnlyDetectedPickups(RE1HDTestBase):
         pool = Counter(i.name for i in self.multiworld.itempool if i.player == self.player)
         checks = [n for n in DETECTED_PICKUPS]
         missable_checks = sum(1 for n in MISSABLE if n in DETECTED_PICKUPS and n in location_table)
-        # one item per check, minus one per missable check (that location holds locked junk)
-        self.assertEqual(sum(pool.values()), len(checks) - missable_checks)
+        # one item per check, minus one per missable check (that location holds locked junk), minus
+        # the Broken Flamethrower, placed locked below the cave lift (2026-11-15)
+        self.assertEqual(sum(pool.values()), len(checks) - missable_checks - 1)
+        placed = [loc.name for loc in self.multiworld.get_locations(self.player)
+                  if loc.item is not None and loc.item.name == "Broken Flamethrower"]
+        from ..data import FLAMETHROWER_LOCATIONS
+        self.assertEqual(len(placed), 1)
+        self.assertIn(placed[0], FLAMETHROWER_LOCATIONS)
         for name in MISSABLE_POOL_ITEMS:                       # swapped in for junk
             self.assertEqual(pool[name], 1)
         expected = Counter(location_table[n].vanilla_item for n in DETECTED_PICKUPS if n in location_table)
         for name, count in expected.items():                  # every non-junk vanilla item is there
-            if name not in FILLER_ITEMS:
+            if name not in FILLER_ITEMS and name != "Broken Flamethrower":
                 self.assertGreaterEqual(pool[name], count, name)
         extra = set(pool) - set(expected) - set(FILLER_ITEMS) - set(MISSABLE_POOL_ITEMS)
         self.assertEqual(extra, set())                         # nothing else (traps are off here)
@@ -197,11 +203,33 @@ class TestCompleteGame(RE1HDTestBase):
         self.collect_all_but(["Last Book, vol. 2"])
         self.assertFalse(self.can_reach_region("Lab Entrance"))
 
+    # The courtyard puzzles are world events (2026-11-14). collect_all_but() collects placed event
+    # items too without checking where they are, so they're left out and swept for instead.
+    WATER_EVENTS = ["Water Pool Drained", "Falls Area Lift Powered"]
+
     def test_residence_needs_square_crank(self):
-        self.collect_all_but(["Square Crank"])
+        self.collect_all_but(["Square Crank"] + self.WATER_EVENTS)
+        self.multiworld.state.sweep_for_advancements()
         self.assertFalse(self.can_reach_region("Residence Entry Corridor"))
         self.collect_by_name(["Square Crank"])
+        self.multiworld.state.sweep_for_advancements()
         self.assertTrue(self.can_reach_region("Residence Entry Corridor"))
+
+    def test_battery_lift_needs_the_falls_area_first(self):
+        # TessarionAM (2026-11-14): the Battery goes in at the Falls Area end, so with the Battery
+        # but no Square Crank the Falls Area still can't be reached from the Main Garden.
+        self.collect_all_but(["Square Crank"] + self.WATER_EVENTS)
+        self.multiworld.state.sweep_for_advancements()
+        self.assertFalse(self.can_reach_region("Falls Area"))
+
+    def test_caves_need_the_crank_and_the_battery_lift(self):
+        self.collect_all_but(["Battery"] + self.WATER_EVENTS)
+        self.multiworld.state.sweep_for_advancements()
+        self.assertTrue(self.can_reach_region("Falls Area"))
+        self.assertFalse(self.can_reach_region("Mining Area"))
+        self.collect_by_name(["Battery"])
+        self.multiworld.state.sweep_for_advancements()
+        self.assertTrue(self.can_reach_region("Mining Area"))
 
     def test_helmet_key_rooms(self):
         self.collect_all_but(["Helmet Key"])
@@ -608,7 +636,7 @@ class KeyMapDrawingTests(unittest.TestCase):
             sc = self.scene(0, room=room)
             self.assertEqual(set(sc.here), {"Tea Room", "Northern Corridor"})
 
-    def test_alfies_door_colours(self):
+    def test_chosen_door_colours(self):
         from ..map_render import CANT_OPEN, ONE_WAY, rgba
         from ..tracker import KEY_COLOURS
         self.assertEqual(KEY_COLOURS["Book of Curses"], "ffe600")   # bright yellow
@@ -791,16 +819,58 @@ class TestSpotEventsInTracker(unittest.TestCase):
 
     def test_boulder_passage_needs_the_hexagonal_crank(self):
         from collections import Counter
-        from ..logic_tracker import reachable_rooms
+        from ..logic_tracker import closure
         from ..items import item_table
         have = Counter(n for n, d in item_table.items() if n != "Hexagonal Crank")
-        rooms = reachable_rooms(have, True, True)
+        # the courtyard puzzles are events (2026-11-14), which closure() works out
+        from ..data import PICKUPS
+        every = {n for _r, n, _i, _q in PICKUPS}          # every pickup a check: nothing free on the way
+        rooms = closure(list(have.elements()), every, True)[1]
         self.assertIn("Mining Area", rooms)
         for room in ("Boulder Passage 1", "Spider Room", "Straight Passage", "Boulder Passage 2",
                      "Underground Statue Room"):
             self.assertNotIn(room, rooms)
         have["Hexagonal Crank"] = 1
-        self.assertIn("Underground Statue Room", reachable_rooms(have, True, True))
+        self.assertIn("Underground Statue Room", closure(list(have.elements()), every, True)[1])
+
+
+class TestBossRush(RE1HDTestBase):
+    """TessarionAM (2026-11-14): the Signal Rockets are locked behind the seven bosses."""
+    options = {"boss_rush": True}
+
+    def test_rockets_are_on_the_boss_rush_check(self):
+        from ..data import BOSS_RUSH_LOCATION
+        loc = self.multiworld.get_location(BOSS_RUSH_LOCATION, self.player)
+        self.assertEqual(loc.item.name, "Signal Rockets")
+        self.assertTrue(loc.locked)
+        pool = [i.name for i in self.multiworld.itempool if i.player == self.player]
+        self.assertNotIn("Signal Rockets", pool)
+
+    def test_check_needs_every_boss(self):
+        from ..data import BOSSES, BOSS_RUSH_LOCATION
+        names = [b[0] for b in BOSSES]
+        from BaseClasses import CollectionState
+        loc = self.multiworld.get_location(BOSS_RUSH_LOCATION, self.player)
+        state = CollectionState(self.multiworld)
+        for item in self.multiworld.get_items():
+            if item.player == self.player and item.name not in names[-1:]:
+                state.collect(item, prevent_sweep=True)      # no sweep: the Tyrant event stays out
+        self.assertFalse(loc.access_rule(state))
+        state.collect(self.get_item_by_name(names[-1]), prevent_sweep=True)
+        self.assertTrue(loc.access_rule(state))
+
+    def test_slot_data(self):
+        self.assertEqual(self.world.fill_slot_data()["boss_rush"], 1)
+
+
+class TestBossRushNeedsTheHelicopter(RE1HDTestBase):
+    options = {"boss_rush": True, "goal": "mansion_escape"}
+
+    def test_ignored_with_mansion_escape(self):
+        from ..data import BOSS_RUSH_LOCATION
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertNotIn(BOSS_RUSH_LOCATION, names)
+        self.assertEqual(self.world.fill_slot_data()["boss_rush"], 0)
 
 
 class TestMissable(RE1HDTestBase):

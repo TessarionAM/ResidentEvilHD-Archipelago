@@ -213,6 +213,7 @@ DETECTED_PICKUPS = {
     "Power Maze B - Battery Pack": (0x2F1, 7, 121),
     "Main Laboratory - Master Key": (0x30E, 5, 55),
     "Main Laboratory Entrance - Shotgun Shells": (0x30F, 3, 18),
+    "Cell - Shotgun Shells": (0x2FB, 4, 18),        # 2026-11-14: seen twice in the Cell (see data.py)
     # Maps (extra checks, map_checks option). The player keeps the map.
     "Art Room - Map of the Mansion 1F": (0x316, 0, 130),   # confirmed 2026-11-10 (only bit, clean run)
     # Found in the full mapping run 2026-11-10: one bit, no item gained, in the map's room.
@@ -272,7 +273,7 @@ START_BOX_RIBBONS = 99
 # Handed straight to Jill's INVENTORY even when received items go to the item box: every item
 # box needs the Sword Key (Book of Curses, 22) to reach, so it must never wait in a box
 # (seed test 1, 2026-11-10). If her inventory is full the client waits and asks for room.
-DIRECT_INVENTORY_ITEMS = {22}
+DIRECT_INVENTORY_ITEMS = {22, 107}     # Book of Curses, Broken Flamethrower (no item box below the cave lift)
 
 
 def delivery_quantity(game_id: int) -> int:

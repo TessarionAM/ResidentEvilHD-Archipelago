@@ -50,6 +50,11 @@ ESCAPE = {"513-514", "514-515", "500-501", "501-50d", "303-50d"}
 # the gun back) - so a shuffled exit led into the Living Room, whose door then stayed locked, and Barry
 # never came (log 16:47:39-16:47:52). Both Marble Room doors stay where they are.
 STORY = {"316-317", "317-319", "109-115", "115-116"}
+# One-sided puzzles (TessarionAM, 2026-11-14): the Stone & Metal gate (11a-11b) only opens from the
+# Roofed Passage, the Square Crank only drains the pool from the Water Pool (pool walk -> lift 301-302)
+# and the Battery powers the Falls Area lift (300-302) from its lower end. Their rules belong to the
+# rooms (gate, pool, lift power), not to where the door leads, so these stay where they are.
+ONE_SIDED_PUZZLES = {"11a-11b", "300-302", "301-302"}
 ATTEMPTS = 400
 BUILD_GIVE_UP = 25     # failed builds (none succeeding) before these locks are given up on
 CHECK_GIVE_UP = 60     # built layouts failing the logic check before these locks are given up on
@@ -65,7 +70,7 @@ class ShuffleError(Exception):
 # ------------------------------------------------------------------ ends
 def shufflable(did: str) -> bool:
     d = DOOR_TABLE[did]
-    if did in ESCAPE or did in STORY or d["kind"] not in SHUFFLE_KINDS or not d["world"]:
+    if did in ESCAPE or did in STORY or did in ONE_SIDED_PUZZLES or d["kind"] not in SHUFFLE_KINDS or not d["world"]:
         return False
     if d.get("door_type", 0) not in SHUFFLE_TYPES:
         return False
@@ -109,7 +114,8 @@ def unkey(text: str) -> End:
 
 
 # ------------------------------------------------------------------ layouts
-def make_layout(mode: int, rng, validate=None, base_doors: Optional[List[tuple]] = None) -> Dict[str, object]:
+def make_layout(mode: int, rng, validate=None, base_doors: Optional[List[tuple]] = None,
+                origin: str = START) -> Dict[str, object]:
     """A layout that passes validate(layout) (None = completable, else a reason). Re-rolls."""
     if mode == OFF:
         return {}
@@ -117,7 +123,7 @@ def make_layout(mode: int, rng, validate=None, base_doors: Optional[List[tuple]]
     built = 0
     for attempt in range(ATTEMPTS):
         try:
-            layout = build_layout(mode, rng, base_doors)
+            layout = build_layout(mode, rng, base_doors, origin)
         except ShuffleError as exc:          # this random build ran into a dead end: roll again
             reason = str(exc)
             if built == 0 and attempt + 1 >= BUILD_GIVE_UP:
@@ -150,7 +156,7 @@ def pinned(need: Dict[End, Optional[tuple]]) -> Set[str]:
     return out
 
 
-def _groups(base_doors: Optional[List[tuple]], keep: Set[str] = frozenset()):
+def _groups(base_doors: Optional[List[tuple]], keep: Set[str] = frozenset(), origin: str = START):
     """Logic rooms joined by links the shuffle doesn't touch (internal doors, event doors, the
     escape route, non-door links like the Crypt's) form one group: reaching one reaches the rest.
     Returns (group of each logic room, ends of each group, the start's group)."""
@@ -172,7 +178,7 @@ def _groups(base_doors: Optional[List[tuple]], keep: Set[str] = frozenset()):
     for e in ends():
         if e[0] not in keep:
             of.setdefault(group[logic_room(e)], []).append(e)
-    return group, of, group[START]
+    return group, of, group[origin]
 
 
 def needs(base_doors: Optional[List[tuple]]) -> Dict[End, Optional[tuple]]:
@@ -226,13 +232,14 @@ def _sealed_once(base_doors, need, keep, DOORS) -> Set[str]:
     return out
 
 
-def build_layout(mode: int, rng, base_doors: Optional[List[tuple]] = None) -> Dict[str, object]:
+def build_layout(mode: int, rng, base_doors: Optional[List[tuple]] = None,
+                 origin: str = START) -> Dict[str, object]:
     """A layout with every room connected and no softlock built in (keys are then checked by the
     fill): see _coupled / _decoupled."""
     need = needs(base_doors)
     keep = pinned(need)
     sealed = sealed_rooms(base_doors, need, keep)
-    group, of, start = _groups(base_doors, keep | sealed)
+    group, of, start = _groups(base_doors, keep | sealed, origin)
     if mode == COUPLED:
         targets = _coupled(of, start, need, rng)
     else:
@@ -456,12 +463,14 @@ def _ways_back(doors: List[tuple]) -> List[tuple]:
     return out
 
 
-def stuck_rooms(doors, have: Counter, box_gate: bool) -> List[str]:
+def stuck_rooms(doors, have: Counter, box_gate: bool, origin: str = START) -> List[str]:
     """Rooms Jill can reach with `have` but can't get back to the start from (a softlock), using
     the same rules as door_locks.reachable."""
     from .door_locks import _ok, reachable
-    rooms, have2, box = reachable(doors, have, box_gate)
-    back, changed = {START}, True
+    from .door_locks import with_start
+    doors = with_start(doors, origin)
+    rooms, have2, box = reachable(doors, have, box_gate, origin)
+    back, changed = {origin}, True
     while changed:                     # rooms from which START can be reached (reverse search)
         changed = False
         for a, b, req, one_way in doors:
@@ -475,7 +484,7 @@ def stuck_rooms(doors, have: Counter, box_gate: bool) -> List[str]:
 
 
 def check(layout, base_doors, progression, locations, goal_complete: bool, box_gate: bool, rng,
-          start=(), everything: bool = True) -> Optional[str]:
+          start=(), everything: bool = True, origin: str = START) -> Optional[str]:
     """None if the shuffled world is completable and has no softlock, else a reason.
     Completable: door_locks.check_layout (assumed fill) on the shuffled connections.
     No softlock: with the starting items, and again after each sphere of a fill (every location
@@ -483,7 +492,7 @@ def check(layout, base_doors, progression, locations, goal_complete: bool, box_g
     from .door_locks import _ok, check_layout, reachable
     doors = connections(layout, base_doors)
     reason = check_layout({}, progression, locations, goal_complete, box_gate, rng, start,
-                          everything=everything, doors=doors)
+                          everything=everything, doors=doors, origin=origin)
     if reason:
         return reason
     # spheres: collect everything reachable (progression items handed out in a fixed order
@@ -493,10 +502,10 @@ def check(layout, base_doors, progression, locations, goal_complete: bool, box_g
     left = list(progression)
     free = list(locations)
     for _ in range(len(progression) + 2):
-        stuck = stuck_rooms(doors, have, box_gate)
+        stuck = stuck_rooms(doors, have, box_gate, origin)
         if stuck:
             return f"softlock: {', '.join(stuck[:3])} has no way back with the items Jill can have then"
-        rooms, have2, box = reachable(doors, have, box_gate)
+        rooms, have2, box = reachable(doors, have, box_gate, origin)
         got = [loc for loc in free if loc[1] in rooms and _ok(loc[2], have2, box, box_gate)]
         if not got or not left:
             break

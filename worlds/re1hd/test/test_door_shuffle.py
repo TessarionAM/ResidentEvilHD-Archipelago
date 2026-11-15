@@ -72,7 +72,10 @@ class LayoutTests(unittest.TestCase):
         items, locs = dl.simple_progression()
         # 40 tries each (2026-11-13: 20 was too few to measure coupled's ~15% per-try pass rate
         # with normal locks; generation itself makes up to 400 tries per lock layout)
-        for mode, at_least in ((ds.COUPLED, 3), (ds.DECOUPLED, 16)):
+        # 2026-11-14: coupled went from 3 to 2 here (about 7.5% per try over 120 seeds). The lost
+        # layouts were impossible in the game: the only way into the Roofed Passage was through the
+        # Stone & Metal gate from the Garden Shed side, which can't be opened from there.
+        for mode, at_least in ((ds.COUPLED, 2), (ds.DECOUPLED, 16)):
             ok = 0
             for seed in range(40):
                 rng = random.Random(seed)

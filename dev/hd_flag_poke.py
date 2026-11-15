@@ -14,6 +14,16 @@ How to use:
   4. Teleport into the Cell (F10). Did the scene play? Tell Claude.
   5. If it played: reload the older save again and repeat with 2.
 Nothing else is written. Output: hd_flag_poke_output.txt.
+
+2026-11-14, Stone & Metal gate (test plan 07). Mapping run 2026-11-10: placing the Stone & Metal
+Object on the Roofed Passage gate turned on +0x22D bit 3 and +0x326 bit 1 (14:42:12); taking it
+back (17:53:21) turned both off and turned on +0x304 bit 0 (the "take it back" pickup).
+   3 = +0x22D bit 3 and +0x326 bit 1        (gate open, object on the gate)
+   4 = 3 + +0x304 bit 0                       (gate open, object already taken back)
+       2026-11-14 17:45: CRASHES when the shown object is picked up ("Failed open file ...
+       itemv\\v.arc") - the object is shown but its pickup has no item. Don't use.
+   5 = +0x22D bit 3 only                      (which bit opens the gate, which one shows the object?)
+   6 = +0x326 bit 1 only
 """
 import struct
 import sys
@@ -31,6 +41,10 @@ VK_F9 = 0x78
 CANDIDATES = {
     "1": [(0x245, 4)],
     "2": [(0x18D, 2), (0x39D, 2)],
+    "3": [(0x22D, 3), (0x326, 1)],
+    "4": [(0x22D, 3), (0x326, 1), (0x304, 0)],
+    "5": [(0x22D, 3)],
+    "6": [(0x326, 1)],
 }
 
 
@@ -45,9 +59,9 @@ def main() -> int:
     with OUTPUT.open("a", encoding="utf-8") as f:
         f.write(f"=== Flag poke {time.strftime('%Y-%m-%d %H:%M:%S')} ===\n")
     print(__doc__)
-    choice = (sys.argv[1] if len(sys.argv) > 1 else input("Which candidate (1 or 2)? ")).strip()
+    choice = (sys.argv[1] if len(sys.argv) > 1 else input("Which candidate (1-6)? ")).strip()
     if choice not in CANDIDATES:
-        print("Type 1 or 2.")
+        print("Type a number from 1 to 6.")
         return 1
     bits = CANDIDATES[choice]
     try:
@@ -74,7 +88,7 @@ def main() -> int:
                         old = conn.read_bytes(flags + off, 1)[0]
                         conn.write_bytes(flags + off, bytes([old | (1 << bit)]))
                         say(f"  +{off:#x} bit {bit}: was {(old >> bit) & 1}, now 1  (room {stage * 0x100 + r:#x})")
-                    say("Set. Now teleport into the Cell and see whether Chris's scene plays. You can close this window.")
+                    say("Set. Now check what the plan asks (Cell scene for 1/2, the gate for 3/4). You can close this window.")
             was = down
             time.sleep(0.1)
     except ProcessError as exc:

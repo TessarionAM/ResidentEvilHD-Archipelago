@@ -4,7 +4,7 @@ they're tested offline; RE1HDClient puts the text into two tabs: "Tracker" and "
 Kivy markup: [b]bold[/b], [color=rrggbb]...[/color].
 """
 from collections import Counter
-from typing import Dict, Iterable, List, Set
+from typing import Dict, Iterable, List, Optional, Set
 
 from .data import DOORS, EXTRA_CHECKS, PICKUPS
 from .logic_tracker import closure, in_logic, reachable_rooms
@@ -31,11 +31,39 @@ _ROOM_OF: Dict[str, str] = {name: room for room, name, _i, _r in PICKUPS}
 _ROOM_OF.update({name: room for _c, room, name, _r in EXTRA_CHECKS})
 
 
-def tracker_text(received: Iterable[str], active: Set[str], checked: Set[str], box_gate: bool) -> str:
+def drop_gone(active: Set[str], checked: Set[str], received: Iterable[str]) -> Set[str]:
+    """Checks the game won't let you do any more once you hold an item (data.GONE_WHEN, e.g. the
+    Cerberus' Collar once a Collar was received) leave the tracker - unless already done."""
+    from .data import GONE_WHEN
+    have = set(received)
+    return {n for n in active if n in checked or GONE_WHEN.get(n) not in have}
+
+
+def boss_lines(bosses: Optional[Dict[str, bool]]) -> List[str]:
+    """Boss Rush (2026-11-15, TessarionAM): which bosses are dead and which are left.
+    bosses = the client's bosses_dead (boss event name -> dead); None = Boss Rush is off."""
+    if bosses is None:
+        return []
+    from .data import BOSSES
+    dead = [name for name, *_r in BOSSES if bosses.get(name)]
+    lines = [f"[b]Boss Rush: {len(dead)} of {len(BOSSES)} defeated[/b]"
+             + ("" if bosses else f"   [color={GREY}](load your game to read them)[/color]")]
+    for name, room, *_r in BOSSES:
+        label = name.replace(" Defeated", "")
+        if bosses.get(name):
+            lines.append(f"[color={GREEN}]{label}: defeated[/color]")
+        else:
+            lines.append(f"{label}: left ({room})")
+    return lines + [""]
+
+
+def tracker_text(received: Iterable[str], active: Set[str], checked: Set[str], box_gate: bool,
+                 bosses: Optional[Dict[str, bool]] = None) -> str:
     received = list(received)
     reachable = in_logic(received, active, checked, box_gate)
     lines = [f"[b]Checks you can do now: {len(reachable)}[/b]   "
              f"(done {len(checked)} of {len(active)})", ""]
+    lines = boss_lines(bosses) + lines
     by_room: Dict[str, List[str]] = {}
     for name in reachable:
         by_room.setdefault(_ROOM_OF.get(name, "?"), []).append(name.split(" - ", 1)[-1])

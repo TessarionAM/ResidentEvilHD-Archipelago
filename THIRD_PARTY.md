@@ -25,6 +25,9 @@ Used for the Steam version:
 - `dev/client/hd_items.py`: the item ID table (generated from `REmakeHook/src/Game/Items.h`).
 - `dev/client/bhdtool_rooms.json`: BhdTool's room list with door positions, used by the research
   tools.
+- `worlds/re1hd/client/room_jump.py`: the room jump method of BhdTool's Room Jump tool
+  (`REmakeHook/src/Tools/RoomJumpTool.cpp`): answering the game's trigger check (0x47D6E0) with a
+  filled target room. Our own code (a stub on the call at 0x48AF56); the method is BhdTool's.
 
 BhdTool is GPL-3.0, and so is this project (see `LICENSE`).
 

@@ -32,6 +32,9 @@ The tools share the Archipelago client's own memory code: the `client` package h
 | `hd_equip_watch.py` | Record the equipped and held weapon fields. |
 | `hd_button_finder.py` | Find the controller button state. |
 | `hd_death_load_watch.py` | Record the game's screens after a death and during loads. |
+| `hd_death_memory_test.py` | What changes in memory on a death or load; door-unlock flags live (test plan 01). |
+| `hd_load_menu_watch.py` | The save/load menu object and its state, for autoload (test plan 02; F10 is one optional write). |
+| `hd_boss_watch.py` | Boss kill / story flags live, for the Boss Rush goal (test plan 04). |
 | `hd_code_dump.py` | Save the game's program memory for disassembly. |
 
 **Writing (they change the game's memory; use a spare save)**
@@ -42,6 +45,7 @@ The tools share the Archipelago client's own memory code: the `client` package h
 | `hd_lock_lab.py` | Test changing door locks (the door lock randomiser's method). |
 | `hd_wrong_door_test.py` | Test the Wrong Door trap's door redirection. |
 | `hd_door_teleport.py` | Testing helper: every door in the room leads to a chosen room. |
+| `hd_room_jump_test.py` | Move Jill to a room without a door (BhdTool's method), for the random start room (test plan 03). |
 | `hd_scanner_tour.py` | Testing helper: visit rooms in turn for the door scanner. |
 | `hd_flag_poke.py` | Testing helper: set a candidate flag. |
 | `hd_door_skip.py` | Door skip on its own (the same patches as the client). |
@@ -59,6 +63,11 @@ The tools share the Archipelago client's own memory code: the `client` package h
 
 `client/*.json` holds research data the tools use: BhdTool's room list, the door animation
 table pairs, scanned door locks, room names and the pickup catalogue.
+
+## Test plans
+
+`test_plans/` holds the in-game sessions Claude needs next, in order, each with its tool, steps,
+what to send back and what it decides. Start with `test_plans/README.md`.
 
 ## Tests
 
